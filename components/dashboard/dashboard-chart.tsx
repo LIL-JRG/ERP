@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   BarChart,
   Bar,
@@ -19,44 +19,66 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon, BarChart3, LineChartIcon, ChevronLeft, ChevronRight } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { BarChart3, BarChart as BarChartIcon, LineChart as LineChartIcon, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { supabase } from "@/lib/supabase"
 import React from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface ChartData {
   date: string
+  displayDate: string
   ventas: number
   cotizaciones: number
   ventasCount: number
   cotizacionesCount: number
-  displayDate: string
-  // Nuevas métricas
-  ingresos_mensuales: number
-  tasa_conversion: number
-  promedio_ticket: number
-  tendencia_crecimiento: number
-  eficiencia_ventas: number
-  margen_ganancia: number
+  entradas: number
+  salidas: number
 }
 
 interface DashboardChartProps {
   onDataUpdate?: () => void
 }
 
-// Series disponibles para mostrar en la gráfica
-const AVAILABLE_SERIES = [
-  { key: "ventas", label: "Ventas", color: "#10b981" },
-  { key: "cotizaciones", label: "Cotizaciones", color: "#f59e0b" },
-  { key: "ingresos_mensuales", label: "Ingresos Mensuales", color: "#3b82f6" },
-  { key: "tasa_conversion", label: "Tasa de Conversión (%)", color: "#8b5cf6" },
-  { key: "promedio_ticket", label: "Promedio por Ticket", color: "#ef4444" },
-  { key: "tendencia_crecimiento", label: "Tendencia de Crecimiento (%)", color: "#06b6d4" },
-  { key: "eficiencia_ventas", label: "Eficiencia de Ventas", color: "#84cc16" },
-  { key: "margen_ganancia", label: "Margen de Ganancia (%)", color: "#f97316" },
-]
+// Types for chart presets
+type ChartPreset = {
+  key: string;
+  label: string;
+  series: Array<{
+    key: string;
+    label: string;
+    color: string;
+  }>;
+};
+
+// Presets de series disponibles
+const CHART_PRESETS: ChartPreset[] = [
+  {
+    key: 'ventas_cotizaciones',
+    label: 'Cotizaciones vs Ventas',
+    series: [
+      { key: 'ventas', label: 'Ventas', color: '#10b981' },
+      { key: 'cotizaciones', label: 'Cotizaciones', color: '#f59e0b' }
+    ]
+  },
+  {
+    key: 'flujo_efectivo',
+    label: 'Entradas y Salidas de Efectivo',
+    series: [
+      { key: 'entradas', label: 'Entradas', color: '#10b981' },
+      { key: 'salidas', label: 'Salidas', color: '#ef4444' }
+    ]
+  }
+];
+
+// Todas las series disponibles para referencia
+const ALL_SERIES = {
+  ventas: { key: 'ventas', label: 'Ventas', color: '#10b981' },
+  cotizaciones: { key: 'cotizaciones', label: 'Cotizaciones', color: '#f59e0b' },
+  entradas: { key: 'entradas', label: 'Entradas', color: '#10b981' },
+  salidas: { key: 'salidas', label: 'Salidas', color: '#ef4444' }
+};
 
 export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
   const { formatCurrency } = useSettings()
@@ -69,61 +91,75 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
   const [error, setError] = useState<string | null>(null)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   // Estado para las series seleccionadas
-  const [selectedSeries, setSelectedSeries] = useState<string[]>([])
+  const [selectedPreset, setSelectedPreset] = useState<ChartPreset>(CHART_PRESETS[0]);
+  const [selectedSeries, setSelectedSeries] = useState<string[]>(['ventas', 'cotizaciones'])
 
   // --- Persistencia en localStorage ---
-  // Clave para localStorage
   const STORAGE_KEY = "dashboardChartConfig"
-
-  // Estado para controlar si ya se cargó la configuración inicial
   const [configLoaded, setConfigLoaded] = useState(false)
 
   // Cargar configuración al montar
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
+    const savedConfig = typeof window !== 'undefined' ? localStorage.getItem('chartConfig') : null;
+    
+    if (savedConfig) {
       try {
-        const parsed = JSON.parse(saved)
-        console.log("Cargando configuración guardada:", parsed)
+        const parsed = JSON.parse(savedConfig);
         
-        // Cargar todas las configuraciones guardadas
-        if (parsed.chartType) setChartType(parsed.chartType)
-        if (parsed.viewType) setViewType(parsed.viewType)
-        if (parsed.dateRange) setDateRange(parsed.dateRange)
-        if (parsed.selectedDate) setSelectedDate(new Date(parsed.selectedDate))
+        // Cargar configuraciones guardadas
+        if (parsed.chartType) setChartType(parsed.chartType);
+        if (parsed.viewType) setViewType(parsed.viewType);
+        if (parsed.dateRange) setDateRange(parsed.dateRange);
+        if (parsed.selectedDate) setSelectedDate(new Date(parsed.selectedDate));
         
-        // Cargar series seleccionadas
-        if (parsed.selectedSeries && parsed.selectedSeries.length > 0) {
-          setSelectedSeries(parsed.selectedSeries)
+        // Cargar preset y series seleccionadas
+        if (parsed.selectedPreset && CHART_PRESETS.some(p => p.key === parsed.selectedPreset)) {
+          console.log('Loading saved preset from config:', parsed.selectedPreset);
+          const preset = CHART_PRESETS.find(p => p.key === parsed.selectedPreset) || CHART_PRESETS[0];
+          console.log('Initializing with preset:', preset);
+          
+          const initialSeries = preset.series.map(s => s.key);
+          console.log('Initial series:', initialSeries);
+          
+          setSelectedPreset(preset);
+          setSelectedSeries(initialSeries);
         } else {
-          setSelectedSeries(["ventas", "cotizaciones"])
+          // Valor por defecto
+          console.log('Using default preset: ventas_cotizaciones');
+          setSelectedPreset(CHART_PRESETS[0]);
+          setSelectedSeries(CHART_PRESETS[0].series.map(s => s.key));
         }
       } catch (error) {
-        console.error("Error al cargar configuración:", error)
-        // En caso de error, usar valores por defecto
-        setSelectedSeries(["ventas", "cotizaciones"])
+        console.error("Error al cargar configuración:", error);
+        console.log('Falling back to default preset');
+        setSelectedPreset(CHART_PRESETS[0]);
+        setSelectedSeries(CHART_PRESETS[0].series.map(s => s.key));
       }
     } else {
-      console.log("No hay configuración guardada, usando valores por defecto")
-      setSelectedSeries(["ventas", "cotizaciones"])
+      console.log("No hay configuración guardada, usando valores por defecto");
+      setSelectedPreset(CHART_PRESETS[0]);
+      setSelectedSeries(CHART_PRESETS[0].series.map(s => s.key));
     }
-    setConfigLoaded(true)
-  }, [])
+    setConfigLoaded(true);
+  }, []);
 
   // Guardar configuración cuando cambie (solo después de cargar la configuración inicial)
   useEffect(() => {
-    if (configLoaded) {
-      const configToSave = {
-        chartType,
-        viewType,
-        dateRange,
-        selectedSeries,
-        selectedDate: selectedDate.toISOString(),
-      }
-      console.log("Guardando configuración:", configToSave)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(configToSave))
+    if (!configLoaded) return;
+    
+    const config = {
+      chartType,
+      viewType,
+      dateRange,
+      selectedDate: selectedDate.toISOString(),
+      selectedPreset: selectedPreset.key, // Solo guardar la clave del preset
+      selectedSeries
+    };
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chartConfig', JSON.stringify(config));
     }
-  }, [chartType, viewType, dateRange, selectedSeries, selectedDate, configLoaded])
+  }, [chartType, viewType, dateRange, selectedDate, selectedPreset, selectedSeries, configLoaded]);
   // --- Fin persistencia ---
 
   useEffect(() => {
@@ -162,50 +198,53 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
         console.error("Error fetching quotes:", quotesError)
       }
 
-      // Obtener datos de productos para calcular márgenes
-      const { data: productsData, error: productsError } = await supabase
-        .from("products")
-        .select("price, cost")
+      // Obtener datos de movimientos de efectivo (entradas y salidas)
+      const { data: cashFlowData, error: cashFlowError } = await supabase
+        .from("cash_movements")
+        .select("amount, type, created_at")
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString())
 
-      if (productsError) {
-        console.error("Error fetching products:", productsError)
-      }
-
-      // Obtener datos históricos para proyecciones
-      const historicalStartDate = new Date(startDate)
-      historicalStartDate.setMonth(historicalStartDate.getMonth() - 3) // 3 meses atrás
-
-      const { data: historicalSalesData, error: historicalError } = await supabase
-        .from("sales")
-        .select("total, created_at")
-        .eq("status", "completada")
-        .gte("created_at", historicalStartDate.toISOString())
-        .lte("created_at", startDate.toISOString())
-
-      if (historicalError) {
-        console.error("Error fetching historical sales:", historicalError)
+      if (cashFlowError) {
+        console.error("Error al obtener movimientos de efectivo:", cashFlowError)
       }
 
       console.log("Sales data:", salesData?.length || 0, "records")
       console.log("Quotes data:", quotesData?.length || 0, "records")
+      console.log("Cash flow data:", cashFlowData?.length || 0, "records")
 
       // Procesar datos según el rango
       const processedData = processDataByRange(
         dataPoints, 
         salesData || [], 
-        quotesData || [], 
-        productsData || [],
-        historicalSalesData || []
+        quotesData || [],
+        cashFlowData || []
       )
 
       console.log("Processed data:", processedData)
 
-      // Si no hay datos reales, mostrar mensaje de no hay registros
-      if (processedData.every((item) => item.ventas === 0 && item.cotizaciones === 0)) {
-        console.log("No real data found, showing empty state")
-        setChartData([])
+      // Verificar si hay datos reales
+      const hasData = processedData.some(item => 
+        item.ventas > 0 || 
+        item.cotizaciones > 0 || 
+        item.entradas > 0 || 
+        item.salidas > 0
+      );
+
+      console.log('Has data to display?', hasData);
+      console.log('Processed data summary:', {
+        ventas: processedData.reduce((sum, item) => sum + item.ventas, 0),
+        cotizaciones: processedData.reduce((sum, item) => sum + item.cotizaciones, 0),
+        entradas: processedData.reduce((sum, item) => sum + item.entradas, 0),
+        salidas: processedData.reduce((sum, item) => sum + item.salidas, 0),
+      });
+
+      if (!hasData) {
+        console.log("No real data found, showing empty state");
+        setChartData([]);
       } else {
-        setChartData(processedData)
+        console.log("Setting chart data with", processedData.length, "data points");
+        setChartData(processedData);
       }
     } catch (error) {
       console.error("Error fetching chart data:", error)
@@ -259,188 +298,176 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
     return { startDate, endDate, dataPoints }
   }
 
+  // Función para convertir una fecha a la zona horaria local
+  const toLocalDate = (date: Date): Date => {
+    const localDate = new Date(date);
+    localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
+    return localDate;
+  };
+
+  // Función para obtener la hora local de una fecha
+  const getLocalHour = (date: Date): number => {
+    return toLocalDate(date).getHours();
+  };
+
   const processDataByRange = (
     dataPoints: Date[], 
     salesData: any[], 
-    quotesData: any[], 
-    productsData: any[],
-    historicalSalesData: any[]
+    quotesData: any[],
+    cashFlowData: any[]
   ): ChartData[] => {
-    // Calcular métricas globales para proyecciones
-    const avgMargin = calculateAverageMargin(productsData)
-    const historicalTrend = calculateHistoricalTrend(historicalSalesData)
+    console.log('=== Starting processDataByRange ===');
+    console.log('Data points count:', dataPoints.length);
+    console.log('Sales records:', salesData.length);
+    console.log('Quotes records:', quotesData.length);
+    console.log('Cash flow records:', cashFlowData.length);
     
-    return dataPoints.map((point) => {
-      let displayDate = ""
-      let startTime: Date
-      let endTime: Date
+    if (cashFlowData.length > 0) {
+      console.log('First cash flow record:', {
+        ...cashFlowData[0],
+        created_at: new Date(cashFlowData[0].created_at).toLocaleString(),
+        localDate: toLocalDate(new Date(cashFlowData[0].created_at)).toLocaleString()
+      });
+    }
+    console.log('Processing data points:', dataPoints.length);
+    console.log('Sales data count:', salesData.length);
+    console.log('Quotes data count:', quotesData.length);
+    console.log('Cash flow data count:', cashFlowData.length);
 
-      if (dateRange === "day") {
-        // Por horas
-        displayDate = format(point, "HH:mm", { locale: es })
-        startTime = new Date(point)
-        endTime = new Date(point)
-        endTime.setHours(point.getHours() + 1)
-      } else {
-        // Por días
-        displayDate = format(point, "dd/MM", { locale: es })
-        startTime = new Date(point)
-        startTime.setHours(0, 0, 0, 0)
-        endTime = new Date(point)
-        endTime.setHours(23, 59, 59, 999)
-      }
-
-      // Filtrar ventas para este período
-      const periodSales = salesData.filter((sale) => {
-        const saleDate = new Date(sale.created_at)
-        return saleDate >= startTime && saleDate <= endTime
-      })
-
-      // Filtrar cotizaciones para este período
-      const periodQuotes = quotesData.filter((quote) => {
-        const quoteDate = new Date(quote.created_at)
-        return quoteDate >= startTime && quoteDate <= endTime
-      })
-
-      // Calcular métricas básicas
-      const ventas = periodSales.reduce((sum, sale) => sum + (sale.total || 0), 0)
-      const cotizaciones = periodQuotes.reduce((sum, quote) => sum + (quote.total || 0), 0)
-      const ventasCount = periodSales.length
-      const cotizacionesCount = periodQuotes.length
-
-      // Calcular métricas avanzadas
-      const ingresos_mensuales = calculateMonthlyRevenue(point, salesData, historicalTrend)
-      const tasa_conversion = calculateConversionRate(periodQuotes, periodSales)
-      const promedio_ticket = ventasCount > 0 ? ventas / ventasCount : 0
-      const tendencia_crecimiento = calculateGrowthTrend(point, salesData, historicalSalesData)
-      const eficiencia_ventas = calculateSalesEfficiency(periodSales, periodQuotes)
-      const margen_ganancia = calculateProfitMargin(ventas, avgMargin)
+    // Inicializar los datos del gráfico con valores en cero
+    const resultData = dataPoints.map((point: Date) => {
+      const displayDate = dateRange === "day" 
+        ? format(point, "HH:mm", { locale: es })
+        : format(point, "dd/MM", { locale: es });
 
       return {
         date: point.toISOString(),
         displayDate,
-        ventas,
-        cotizaciones,
-        ventasCount,
-        cotizacionesCount,
-        ingresos_mensuales,
-        tasa_conversion,
-        promedio_ticket,
-        tendencia_crecimiento,
-        eficiencia_ventas,
-        margen_ganancia,
+        ventas: 0,
+        cotizaciones: 0,
+        ventasCount: 0,
+        cotizacionesCount: 0,
+        entradas: 0,
+        salidas: 0,
+      };
+    });
+
+    // Procesar ventas
+    salesData.forEach((sale: any) => {
+      if (!sale || !sale.created_at) return;
+      
+      const saleDate = new Date(sale.created_at);
+      const localSaleDate = toLocalDate(saleDate);
+      
+      // Encontrar el índice del punto de datos correspondiente
+      const dataIndex = dateRange === "day"
+        ? getLocalHour(saleDate)  // Usar la hora local para el índice
+        : dataPoints.findIndex((dp: Date) => 
+            dp.getDate() === localSaleDate.getDate() &&
+            dp.getMonth() === localSaleDate.getMonth() &&
+            dp.getFullYear() === localSaleDate.getFullYear()
+          );
+      
+      if (dataIndex >= 0 && dataIndex < resultData.length) {
+        const total = parseFloat(sale.total) || 0;
+        resultData[dataIndex].ventas += total;
+        resultData[dataIndex].ventasCount++;
       }
-    })
+    });
+
+    // Procesar cotizaciones
+    quotesData.forEach((quote: any) => {
+      if (!quote || !quote.created_at) return;
+      
+      const quoteDate = new Date(quote.created_at);
+      const localQuoteDate = toLocalDate(quoteDate);
+      
+      // Encontrar el índice del punto de datos correspondiente
+      const dataIndex = dateRange === "day"
+        ? getLocalHour(quoteDate)  // Usar la hora local para el índice
+        : dataPoints.findIndex((dp: Date) => 
+            dp.getDate() === localQuoteDate.getDate() &&
+            dp.getMonth() === localQuoteDate.getMonth() &&
+            dp.getFullYear() === localQuoteDate.getFullYear()
+          );
+      
+      if (dataIndex >= 0 && dataIndex < resultData.length) {
+        const total = parseFloat(quote.total) || 0;
+        resultData[dataIndex].cotizaciones += total;
+        resultData[dataIndex].cotizacionesCount++;
+      }
+    });
+
+    // Procesar movimientos de efectivo
+    console.log('Processing cash flow data:', cashFlowData);
+    cashFlowData.forEach((flow: any, index: number) => {
+      if (!flow || !flow.created_at) {
+        console.log(`Skipping cash flow record ${index}: missing created_at`);
+        return;
+      }
+      
+      const flowDate = new Date(flow.created_at);
+      const localFlowDate = toLocalDate(flowDate);
+      
+      console.log(`Cash flow record ${index}:`, {
+        created_at: flow.created_at,
+        localDate: localFlowDate.toString(),
+        type: flow.type,
+        amount: flow.amount
+      });
+      
+      // Encontrar el índice del punto de datos correspondiente
+      let dataIndex = -1;
+      
+      if (dateRange === "day") {
+        // Para vista diaria, agrupar por hora
+        const hour = getLocalHour(flowDate);
+        dataIndex = dataPoints.findIndex((dp: Date) => {
+          const dpHour = getLocalHour(dp);
+          return dpHour === hour;
+        });
+        
+        console.log(`Matching hour ${hour} to data index ${dataIndex}`);
+      } else {
+        // Para vista semanal o mensual, agrupar por día
+        dataIndex = dataPoints.findIndex((dp: Date) => {
+          const match = 
+            dp.getDate() === localFlowDate.getDate() &&
+            dp.getMonth() === localFlowDate.getMonth() &&
+            dp.getFullYear() === localFlowDate.getFullYear();
+          
+          if (match) {
+            console.log(`Matched date: ${dp.toISOString()} with ${localFlowDate.toISOString()} at index ${dataIndex}`);
+          }
+          
+          return match;
+        });
+      }
+      
+      if (dataIndex >= 0 && dataIndex < resultData.length) {
+        const amount = parseFloat(flow.amount) || 0;
+        console.log(`Adding ${flow.type} of ${amount} to index ${dataIndex}`);
+        
+        if (flow.type === 'entrada') {
+          resultData[dataIndex].entradas += amount;
+        } else if (flow.type === 'salida') {
+          resultData[dataIndex].salidas += Math.abs(amount);
+        }
+        
+        console.log(`Updated data at index ${dataIndex}:`, resultData[dataIndex]);
+      } else {
+        console.log(`No matching time slot found for cash flow record at ${flow.created_at}`);
+      }
+    });
+
+    console.log('Processed chart data:', resultData);
+    return resultData;
   }
 
-  // Función para calcular margen promedio de productos
-  const calculateAverageMargin = (products: any[]): number => {
-    if (!products || products.length === 0) return 0.3 // Margen por defecto del 30%
-    
-    const margins = products
-      .filter(p => p.price > 0 && p.cost > 0)
-      .map(p => (p.price - p.cost) / p.price)
-    
-    return margins.length > 0 ? margins.reduce((sum, margin) => sum + margin, 0) / margins.length : 0.3
-  }
-
-  // Función para calcular tendencia histórica
-  const calculateHistoricalTrend = (historicalSales: any[]): number => {
-    if (!historicalSales || historicalSales.length < 2) return 0
-    
-    const monthlyTotals = new Map<string, number>()
-    
-    historicalSales.forEach(sale => {
-      const month = new Date(sale.created_at).toISOString().slice(0, 7) // YYYY-MM
-      monthlyTotals.set(month, (monthlyTotals.get(month) || 0) + sale.total)
-    })
-    
-    const months = Array.from(monthlyTotals.keys()).sort()
-    if (months.length < 2) return 0
-    
-    const firstMonth = monthlyTotals.get(months[0]) || 0
-    const lastMonth = monthlyTotals.get(months[months.length - 1]) || 0
-    
-    return firstMonth > 0 ? ((lastMonth - firstMonth) / firstMonth) * 100 : 0
-  }
-
-  // Función para calcular ingresos mensuales proyectados
-  const calculateMonthlyRevenue = (point: Date, salesData: any[], historicalTrend: number): number => {
-    const currentMonth = new Date(point.getFullYear(), point.getMonth(), 1)
-    const nextMonth = new Date(point.getFullYear(), point.getMonth() + 1, 1)
-    
-    const currentMonthSales = salesData.filter(sale => {
-      const saleDate = new Date(sale.created_at)
-      return saleDate >= currentMonth && saleDate < nextMonth
-    })
-    
-    const currentMonthRevenue = currentMonthSales.reduce((sum, sale) => sum + sale.total, 0)
-    
-    // Proyección basada en tendencia histórica y días transcurridos
-    const daysInMonth = new Date(point.getFullYear(), point.getMonth() + 1, 0).getDate()
-    const daysElapsed = point.getDate()
-    const completionRate = daysElapsed / daysInMonth
-    
-    if (completionRate > 0) {
-      const projectedRevenue = currentMonthRevenue / completionRate
-      const trendAdjustment = 1 + (historicalTrend / 100)
-      return projectedRevenue * trendAdjustment
-    }
-    
-    return currentMonthRevenue
-  }
-
-  // Función para calcular tasa de conversión
-  const calculateConversionRate = (quotes: any[], sales: any[]): number => {
-    if (quotes.length === 0) return 0
-    
-    // Contar cotizaciones convertidas (que tienen ventas asociadas)
-    const convertedQuotes = quotes.filter(quote => 
-      sales.some(sale => sale.quote_id === quote.id)
-    ).length
-    
-    return (convertedQuotes / quotes.length) * 100
-  }
-
-  // Función para calcular tendencia de crecimiento
-  const calculateGrowthTrend = (point: Date, currentSales: any[], historicalSales: any[]): number => {
-    const currentPeriod = new Date(point.getFullYear(), point.getMonth(), 1)
-    const previousPeriod = new Date(point.getFullYear(), point.getMonth() - 1, 1)
-    
-    const currentPeriodSales = currentSales.filter(sale => {
-      const saleDate = new Date(sale.created_at)
-      return saleDate >= currentPeriod && saleDate < point
-    })
-    
-    const previousPeriodSales = historicalSales.filter(sale => {
-      const saleDate = new Date(sale.created_at)
-      return saleDate >= previousPeriod && saleDate < currentPeriod
-    })
-    
-    const currentTotal = currentPeriodSales.reduce((sum, sale) => sum + sale.total, 0)
-    const previousTotal = previousPeriodSales.reduce((sum, sale) => sum + sale.total, 0)
-    
-    return previousTotal > 0 ? ((currentTotal - previousTotal) / previousTotal) * 100 : 0
-  }
-
-  // Función para calcular eficiencia de ventas
-  const calculateSalesEfficiency = (sales: any[], quotes: any[]): number => {
-    if (quotes.length === 0) return 0
-    
-    const totalQuotesValue = quotes.reduce((sum, quote) => sum + quote.total, 0)
-    const totalSalesValue = sales.reduce((sum, sale) => sum + sale.total, 0)
-    
-    return totalQuotesValue > 0 ? (totalSalesValue / totalQuotesValue) * 100 : 0
-  }
-
-  // Función para calcular margen de ganancia
-  const calculateProfitMargin = (revenue: number, avgMargin: number): number => {
-    return revenue * avgMargin
-  }
-
+  // Generar datos de ejemplo cuando no hay datos reales
   const generateDemoData = (): ChartData[] => {
     const { dataPoints } = getDateRange()
-    return dataPoints.map((point, index) => {
+    return dataPoints.map((point) => {
       let displayDate = ""
       if (dateRange === "day") {
         displayDate = format(point, "HH:mm", { locale: es })
@@ -452,6 +479,8 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
       const cotizaciones = Math.floor(Math.random() * 3000) + 1000
       const ventasCount = Math.floor(Math.random() * 5) + 1
       const cotizacionesCount = Math.floor(Math.random() * 8) + 2
+      const entradas = Math.floor(Math.random() * 2500) + 1000
+      const salidas = Math.floor(Math.random() * 2000) + 500
 
       return {
         date: point.toISOString(),
@@ -460,41 +489,44 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
         cotizaciones,
         ventasCount,
         cotizacionesCount,
-        ingresos_mensuales: Math.floor(Math.random() * 50000) + 15000,
-        tasa_conversion: Math.floor(Math.random() * 40) + 20,
-        promedio_ticket: Math.floor(Math.random() * 200) + 100,
-        tendencia_crecimiento: Math.floor(Math.random() * 20) - 5,
-        eficiencia_ventas: Math.floor(Math.random() * 30) + 60,
-        margen_ganancia: Math.floor(Math.random() * 15) + 20,
-      }
+        entradas,
+        salidas
+      } as ChartData
     })
   }
 
+  // Navegar entre fechas
   const navigateDate = (direction: "prev" | "next") => {
     const newDate = new Date(selectedDate)
-
-    switch (dateRange) {
-      case "day":
-        newDate.setDate(selectedDate.getDate() + (direction === "next" ? 1 : -1))
-        break
-      case "week":
-        newDate.setDate(selectedDate.getDate() + (direction === "next" ? 7 : -7))
-        break
-      case "month":
-        newDate.setMonth(selectedDate.getMonth() + (direction === "next" ? 1 : -1))
-        break
+    
+    if (dateRange === 'day') {
+      newDate.setDate(selectedDate.getDate() + (direction === 'next' ? 1 : -1))
+    } else if (dateRange === 'week') {
+      newDate.setDate(selectedDate.getDate() + (direction === 'next' ? 7 : -7))
+    } else if (dateRange === 'month') {
+      newDate.setMonth(selectedDate.getMonth() + (direction === 'next' ? 1 : -1))
     }
-
+    
     setSelectedDate(newDate)
   }
 
-  const formatTooltipValue = (value: number, name: string) => {
-    if (chartType === "amount") {
-      return [formatCurrency(value), name === "ventas" ? "Ventas" : "Cotizaciones"]
-    } else {
-      return [value, name === "ventas" ? "Ventas" : "Cotizaciones"]
+  // Manejar cambio de preset
+  const handlePresetChange = useCallback((value: string) => {
+    console.log('Changing preset to:', value);
+    const preset = CHART_PRESETS.find(p => p.key === value) || CHART_PRESETS[0];
+    console.log('New preset:', preset);
+    
+    const newSeries = preset.series.map(s => s.key);
+    console.log('Setting selected series:', newSeries);
+    
+    setSelectedPreset(preset);
+    setSelectedSeries(newSeries);
+    
+    // Guardar preferencia en localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chartPreset', preset.key);
     }
-  }
+  }, []);
 
   // Tooltip personalizado para mostrar nombres y colores correctos
   interface CustomTooltipProps {
@@ -503,6 +535,7 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
       color: string;
       name: string;
       value: number;
+      payload: Record<string, any>;
     }>;
     label?: string;
   }
@@ -510,14 +543,14 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
   const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (!active || !payload || payload.length === 0) return null;
     
-    const formatValue = (name: string, value: number) => {
-      // Métricas que deben mostrarse como porcentaje
-      const percentageMetrics = ["tasa_conversion", "tendencia_crecimiento", "eficiencia_ventas", "margen_ganancia"]
-      const isPercentage = percentageMetrics.some(metric => name.toLowerCase().includes(metric.replace('_', '')))
+    const formatTooltipValue = (name: string, value: number) => {
+      // Verificar si es una métrica de porcentaje
+      const isPercentage = name.toLowerCase().includes('tasa') || 
+                         name.toLowerCase().includes('porcentaje')
       
-      // Métricas que deben mostrarse como moneda
-      const currencyMetrics = ["ventas", "cotizaciones", "ingresos_mensuales", "promedio_ticket"]
-      const isCurrency = currencyMetrics.some(metric => name.toLowerCase().includes(metric.replace('_', '')))
+      // Verificar si es una métrica monetaria
+      const isCurrency = ['ventas', 'cotizaciones', 'entradas', 'salidas']
+        .some(metric => name.toLowerCase().includes(metric))
       
       if (isPercentage) {
         return `${value.toFixed(1)}%`
@@ -543,7 +576,7 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
               }}
             />
             <span>
-              {entry.name}: {formatValue(entry.name, entry.value)}
+              {entry.name}: {formatTooltipValue(entry.name, entry.value)}
             </span>
           </div>
         ))}
@@ -553,115 +586,99 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
 
   // Procesar datos según series seleccionadas
   const processedData = chartData.map((item) => {
-    const obj: any = { displayDate: item.displayDate }
+    const obj: Record<string, any> = { displayDate: item.displayDate }
     
-    if (selectedSeries.includes("ventas")) {
-      obj["ventas"] = chartType === "amount" ? item.ventas : item.ventasCount
-    }
-    if (selectedSeries.includes("cotizaciones")) {
-      obj["cotizaciones"] = chartType === "amount" ? item.cotizaciones : item.cotizacionesCount
-    }
-    if (selectedSeries.includes("ingresos_mensuales")) {
-      obj["ingresos_mensuales"] = item.ingresos_mensuales
-    }
-    if (selectedSeries.includes("tasa_conversion")) {
-      obj["tasa_conversion"] = item.tasa_conversion
-    }
-    if (selectedSeries.includes("promedio_ticket")) {
-      obj["promedio_ticket"] = item.promedio_ticket
-    }
-    if (selectedSeries.includes("tendencia_crecimiento")) {
-      obj["tendencia_crecimiento"] = item.tendencia_crecimiento
-    }
-    if (selectedSeries.includes("eficiencia_ventas")) {
-      obj["eficiencia_ventas"] = item.eficiencia_ventas
-    }
-    if (selectedSeries.includes("margen_ganancia")) {
-      obj["margen_ganancia"] = item.margen_ganancia
-    }
+    // Agregar solo las series que están seleccionadas
+    selectedSeries.forEach(seriesKey => {
+      if (['ventas', 'cotizaciones'].includes(seriesKey)) {
+        obj[seriesKey] = chartType === 'amount' 
+          ? item[seriesKey as keyof ChartData] as number 
+          : item[`${seriesKey}Count` as keyof ChartData] as number
+      } else if (['entradas', 'salidas'].includes(seriesKey)) {
+        obj[seriesKey] = item[seriesKey as keyof ChartData] as number
+      }
+    })
     
-    return obj
+    return obj as Record<string, any>
   })
 
   // Renderizar la gráfica según las series seleccionadas
   const renderChart = () => {
+    console.log('Rendering chart with data:', processedData);
+    console.log('Selected preset:', selectedPreset);
+    console.log('Selected series:', selectedSeries);
+    
+    // Verificar datos de series seleccionadas
+    selectedSeries.forEach(key => {
+      const hasData = processedData.some(item => item[key] > 0);
+      console.log(`Series ${key} has data:`, hasData);
+      if (!hasData) {
+        console.log(`No data found for series: ${key}`);
+      }
+    });
+    
     const commonProps = {
       data: processedData,
       margin: { top: 5, right: 30, left: 20, bottom: 5 },
     }
-    if (viewType === "bar") {
-      return (
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="displayDate" />
-            <YAxis tickFormatter={chartType === "amount" ? (value) => `$${value}` : undefined} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            {selectedSeries.includes("ventas") && (
-              <Bar dataKey="ventas" fill="#10b981" name="Ventas" />
-            )}
-            {selectedSeries.includes("cotizaciones") && (
-              <Bar dataKey="cotizaciones" fill="#f59e0b" name="Cotizaciones" />
-            )}
-            {selectedSeries.includes("ingresos_mensuales") && (
-              <Bar dataKey="ingresos_mensuales" fill="#3b82f6" name="Ingresos Mensuales" />
-            )}
-            {selectedSeries.includes("tasa_conversion") && (
-              <Bar dataKey="tasa_conversion" fill="#8b5cf6" name="Tasa de Conversión (%)" />
-            )}
-            {selectedSeries.includes("promedio_ticket") && (
-              <Bar dataKey="promedio_ticket" fill="#ef4444" name="Promedio por Ticket" />
-            )}
-            {selectedSeries.includes("tendencia_crecimiento") && (
-              <Bar dataKey="tendencia_crecimiento" fill="#06b6d4" name="Tendencia de Crecimiento (%)" />
-            )}
-            {selectedSeries.includes("eficiencia_ventas") && (
-              <Bar dataKey="eficiencia_ventas" fill="#84cc16" name="Eficiencia de Ventas" />
-            )}
-            {selectedSeries.includes("margen_ganancia") && (
-              <Bar dataKey="margen_ganancia" fill="#f97316" name="Margen de Ganancia (%)" />
-            )}
-          </BarChart>
-        </ResponsiveContainer>
-      )
-    } else {
-      return (
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="displayDate" />
-            <YAxis tickFormatter={chartType === "amount" ? (value) => `$${value}` : undefined} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            {selectedSeries.includes("ventas") && (
-              <Line type="monotone" dataKey="ventas" stroke="#10b981" strokeWidth={2} name="Ventas" />
-            )}
-            {selectedSeries.includes("cotizaciones") && (
-              <Line type="monotone" dataKey="cotizaciones" stroke="#f59e0b" strokeWidth={2} name="Cotizaciones" />
-            )}
-            {selectedSeries.includes("ingresos_mensuales") && (
-              <Line type="monotone" dataKey="ingresos_mensuales" stroke="#3b82f6" strokeWidth={2} name="Ingresos Mensuales" />
-            )}
-            {selectedSeries.includes("tasa_conversion") && (
-              <Line type="monotone" dataKey="tasa_conversion" stroke="#8b5cf6" strokeWidth={2} name="Tasa de Conversión (%)" />
-            )}
-            {selectedSeries.includes("promedio_ticket") && (
-              <Line type="monotone" dataKey="promedio_ticket" stroke="#ef4444" strokeWidth={2} name="Promedio por Ticket" />
-            )}
-            {selectedSeries.includes("tendencia_crecimiento") && (
-              <Line type="monotone" dataKey="tendencia_crecimiento" stroke="#06b6d4" strokeWidth={2} name="Tendencia de Crecimiento (%)" />
-            )}
-            {selectedSeries.includes("eficiencia_ventas") && (
-              <Line type="monotone" dataKey="eficiencia_ventas" stroke="#84cc16" strokeWidth={2} name="Eficiencia de Ventas" />
-            )}
-            {selectedSeries.includes("margen_ganancia") && (
-              <Line type="monotone" dataKey="margen_ganancia" stroke="#f97316" strokeWidth={2} name="Margen de Ganancia (%)" />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-      )
+
+    const renderSeries = () => {
+      console.log('Rendering series for:', selectedSeries);
+      
+      return selectedSeries.map(key => {
+        const series = ALL_SERIES[key as keyof typeof ALL_SERIES];
+        if (!series) return null;
+        
+        console.log(`Rendering series ${series.key} with color ${series.color}`);
+        
+        const seriesProps = {
+          key: series.key,
+          name: series.label,
+          dataKey: series.key,
+          stroke: series.color,
+          fill: series.color,
+          strokeWidth: 2
+        };
+
+        return viewType === 'bar' ? (
+          <Bar {...seriesProps} />
+        ) : (
+          <Line type="monotone" {...seriesProps} />
+        );
+      });
     }
+
+    const ChartComponent = viewType === 'bar' ? BarChart : LineChart
+
+    return (
+      <div className="w-full h-[300px] relative">
+        <ResponsiveContainer width="100%" height="100%">
+          <ChartComponent {...commonProps}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis 
+              dataKey="displayDate" 
+              tick={{ fontSize: 12 }}
+              tickMargin={8}
+            />
+            <YAxis 
+              tickFormatter={selectedPreset.key === 'ventas_cotizaciones' && chartType === 'amount' 
+                ? (value: number) => `$${value.toLocaleString()}` 
+                : undefined}
+              tick={{ fontSize: 12 }}
+              tickMargin={8}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            {renderSeries()}
+          </ChartComponent>
+        </ResponsiveContainer>
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -743,50 +760,28 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
                 <SelectItem value="count">Cantidad</SelectItem>
               </SelectContent>
             </Select>
-            {/* Selector de series a mostrar */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Series
-                </Button>
-              </PopoverTrigger>
-                          <PopoverContent className="w-56">
-              <div className="flex flex-col gap-3 p-1">
-                {AVAILABLE_SERIES.map((serie) => (
-                  <label key={serie.key} className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox
-                      checked={selectedSeries.includes(serie.key)}
-                      onCheckedChange={(checked) => {
-                        setSelectedSeries((prev) =>
-                          checked
-                            ? [...prev, serie.key]
-                            : prev.filter((k) => k !== serie.key)
-                        )
-                      }}
-                      id={`series-${serie.key}`}
-                      className="mt-0.5"
-                    />
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span 
-                        style={{ 
-                          backgroundColor: serie.color, 
-                          width: 14, 
-                          height: 14, 
-                          borderRadius: "50%", 
-                          display: "inline-block",
-                          border: "2px solid #e5e7eb",
-                          flexShrink: 0
-                        }} 
-                      />
-                      <span className="text-sm font-medium leading-tight break-words">
-                        {serie.label}
-                      </span>
-                    </div>
-                  </label>
+            {/* Selector de preset */}
+            <Select 
+              value={selectedPreset.key}
+              onValueChange={handlePresetChange}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Seleccionar vista">
+                  {selectedPreset.label}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {CHART_PRESETS.map((preset) => (
+                  <SelectItem 
+                    key={preset.key} 
+                    value={preset.key}
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    {preset.label}
+                  </SelectItem>
                 ))}
-              </div>
-            </PopoverContent>
-            </Popover>
+              </SelectContent>
+            </Select>
             {/* Selector de tipo de gráfica */}
             <div className="flex gap-1">
               <Button variant={viewType === "bar" ? "default" : "outline"} size="sm" onClick={() => setViewType("bar")}> <BarChart3 className="h-4 w-4" /> </Button>
