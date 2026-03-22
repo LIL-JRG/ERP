@@ -19,12 +19,22 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { BarChart3, BarChart as BarChartIcon, LineChart as LineChartIcon, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
+import { 
+  BarChart3, 
+  BarChart as BarChartIcon, 
+  LineChart as LineChartIcon, 
+  Calendar as CalendarIcon, 
+  ChevronLeft, 
+  ChevronRight, 
+  Loader2, 
+  RefreshCw 
+} from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { supabase } from "@/lib/supabase"
 import React from "react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
 
 interface ChartData {
   date: string
@@ -52,25 +62,15 @@ type ChartPreset = {
   }>;
 };
 
-// Presets de series disponibles
-const CHART_PRESETS: ChartPreset[] = [
-  {
-    key: 'ventas_cotizaciones',
-    label: 'Cotizaciones vs Ventas',
-    series: [
-      { key: 'ventas', label: 'Ventas', color: '#10b981' },
-      { key: 'cotizaciones', label: 'Cotizaciones', color: '#f59e0b' }
-    ]
-  },
-  {
-    key: 'flujo_efectivo',
-    label: 'Entradas y Salidas de Efectivo',
-    series: [
-      { key: 'entradas', label: 'Entradas', color: '#10b981' },
-      { key: 'salidas', label: 'Salidas', color: '#ef4444' }
-    ]
-  }
-];
+// Única configuración de series (Flujo de Efectivo)
+const CHART_CONFIG = {
+  key: 'flujo_efectivo',
+  label: 'Análisis de Entradas y Salidas',
+  series: [
+    { key: 'entradas', label: 'Entradas', color: '#10b981' },
+    { key: 'salidas', label: 'Salidas', color: '#ef4444' }
+  ]
+};
 
 // Todas las series disponibles para referencia
 const ALL_SERIES = {
@@ -83,16 +83,13 @@ const ALL_SERIES = {
 export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
   const { formatCurrency } = useSettings()
   const [chartType, setChartType] = useState<"amount" | "count">("amount")
-  const [viewType, setViewType] = useState<"bar" | "line">("bar")
+  const [viewType, setViewType] = useState<"bar" | "line">("line") // default to line for mockup look
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [dateRange, setDateRange] = useState<"day" | "week" | "month">("week")
+  const [dateRange, setDateRange] = useState<"day" | "week" | "month">("day")
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
-  // Estado para las series seleccionadas
-  const [selectedPreset, setSelectedPreset] = useState<ChartPreset>(CHART_PRESETS[0]);
-  const [selectedSeries, setSelectedSeries] = useState<string[]>(['ventas', 'cotizaciones'])
 
   // --- Persistencia en localStorage ---
   const STORAGE_KEY = "dashboardChartConfig"
@@ -110,35 +107,14 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
         if (parsed.chartType) setChartType(parsed.chartType);
         if (parsed.viewType) setViewType(parsed.viewType);
         if (parsed.dateRange) setDateRange(parsed.dateRange);
-        if (parsed.selectedDate) setSelectedDate(new Date(parsed.selectedDate));
+        // No cargamos la fecha guardada para que siempre abra en hoy por defecto
+        // if (parsed.selectedDate) setSelectedDate(new Date(parsed.selectedDate));
         
-        // Cargar preset y series seleccionadas
-        if (parsed.selectedPreset && CHART_PRESETS.some(p => p.key === parsed.selectedPreset)) {
-          console.log('Loading saved preset from config:', parsed.selectedPreset);
-          const preset = CHART_PRESETS.find(p => p.key === parsed.selectedPreset) || CHART_PRESETS[0];
-          console.log('Initializing with preset:', preset);
-          
-          const initialSeries = preset.series.map(s => s.key);
-          console.log('Initial series:', initialSeries);
-          
-          setSelectedPreset(preset);
-          setSelectedSeries(initialSeries);
-        } else {
-          // Valor por defecto
-          console.log('Using default preset: ventas_cotizaciones');
-          setSelectedPreset(CHART_PRESETS[0]);
-          setSelectedSeries(CHART_PRESETS[0].series.map(s => s.key));
-        }
       } catch (error) {
         console.error("Error al cargar configuración:", error);
-        console.log('Falling back to default preset');
-        setSelectedPreset(CHART_PRESETS[0]);
-        setSelectedSeries(CHART_PRESETS[0].series.map(s => s.key));
       }
     } else {
       console.log("No hay configuración guardada, usando valores por defecto");
-      setSelectedPreset(CHART_PRESETS[0]);
-      setSelectedSeries(CHART_PRESETS[0].series.map(s => s.key));
     }
     setConfigLoaded(true);
   }, []);
@@ -151,15 +127,13 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
       chartType,
       viewType,
       dateRange,
-      selectedDate: selectedDate.toISOString(),
-      selectedPreset: selectedPreset.key, // Solo guardar la clave del preset
-      selectedSeries
+      // No guardamos la fecha para evitar que se quede "atrapada" en un día viejo
     };
     
     if (typeof window !== 'undefined') {
       localStorage.setItem('chartConfig', JSON.stringify(config));
     }
-  }, [chartType, viewType, dateRange, selectedDate, selectedPreset, selectedSeries, configLoaded]);
+  }, [chartType, viewType, dateRange, selectedDate, configLoaded]);
   // --- Fin persistencia ---
 
   useEffect(() => {
@@ -173,52 +147,36 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
     try {
       const { startDate, endDate, dataPoints } = getDateRange()
 
-      console.log("Fetching data from", startDate.toISOString(), "to", endDate.toISOString())
+      // Peticiones paralelas para todos los datos
+      const [cashFlowRes, salesRes, quotesRes] = await Promise.all([
+        supabase
+          .from("cash_movements")
+          .select("amount, type, created_at")
+          .gte("created_at", startDate.toISOString())
+          .lte("created_at", endDate.toISOString()),
+        supabase
+          .from("sales")
+          .select("total, created_at")
+          .eq("status", "completada")
+          .gte("created_at", startDate.toISOString())
+          .lte("created_at", endDate.toISOString()),
+        supabase
+          .from("quotes")
+          .select("id, created_at")
+          .gte("created_at", startDate.toISOString())
+          .lte("created_at", endDate.toISOString())
+      ])
 
-      // Obtener datos de ventas
-      const { data: salesData, error: salesError } = await supabase
-        .from("sales")
-        .select("total, created_at, sale_type")
-        .eq("status", "completada")
-        .gte("created_at", startDate.toISOString())
-        .lte("created_at", endDate.toISOString())
-
-      if (salesError) {
-        console.error("Error fetching sales:", salesError)
-      }
-
-      // Obtener datos de cotizaciones
-      const { data: quotesData, error: quotesError } = await supabase
-        .from("quotes")
-        .select("total, created_at, status")
-        .gte("created_at", startDate.toISOString())
-        .lte("created_at", endDate.toISOString())
-
-      if (quotesError) {
-        console.error("Error fetching quotes:", quotesError)
-      }
-
-      // Obtener datos de movimientos de efectivo (entradas y salidas)
-      const { data: cashFlowData, error: cashFlowError } = await supabase
-        .from("cash_movements")
-        .select("amount, type, created_at")
-        .gte("created_at", startDate.toISOString())
-        .lte("created_at", endDate.toISOString())
-
-      if (cashFlowError) {
-        console.error("Error al obtener movimientos de efectivo:", cashFlowError)
-      }
-
-      console.log("Sales data:", salesData?.length || 0, "records")
-      console.log("Quotes data:", quotesData?.length || 0, "records")
-      console.log("Cash flow data:", cashFlowData?.length || 0, "records")
+      if (cashFlowRes.error) console.error("Error cashFlow:", cashFlowRes.error)
+      if (salesRes.error) console.error("Error sales:", salesRes.error)
+      if (quotesRes.error) console.error("Error quotes:", quotesRes.error)
 
       // Procesar datos según el rango
       const processedData = processDataByRange(
         dataPoints, 
-        salesData || [], 
-        quotesData || [],
-        cashFlowData || []
+        salesRes.data || [], 
+        quotesRes.data || [], 
+        cashFlowRes.data || []
       )
 
       console.log("Processed data:", processedData)
@@ -239,13 +197,9 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
         salidas: processedData.reduce((sum, item) => sum + item.salidas, 0),
       });
 
-      if (!hasData) {
-        console.log("No real data found, showing empty state");
-        setChartData([]);
-      } else {
-        console.log("Setting chart data with", processedData.length, "data points");
-        setChartData(processedData);
-      }
+      // Siempre establecer los datos procesados (con ceros si no hay datos)
+      // para que el gráfico muestre el eje X con las fechas correctas
+      setChartData(processedData);
     } catch (error) {
       console.error("Error fetching chart data:", error)
       setError("Error al cargar los datos del gráfico")
@@ -262,7 +216,6 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
 
     switch (dateRange) {
       case "day":
-        // Mostrar las últimas 24 horas por horas
         startDate.setHours(0, 0, 0, 0)
         endDate.setHours(23, 59, 59, 999)
         for (let i = 0; i < 24; i++) {
@@ -272,7 +225,6 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
         }
         break
       case "week":
-        // Mostrar los últimos 7 días
         startDate.setDate(selectedDate.getDate() - 6)
         startDate.setHours(0, 0, 0, 0)
         endDate.setHours(23, 59, 59, 999)
@@ -283,7 +235,6 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
         }
         break
       case "month":
-        // Mostrar los últimos 30 días
         startDate.setDate(selectedDate.getDate() - 29)
         startDate.setHours(0, 0, 0, 0)
         endDate.setHours(23, 59, 59, 999)
@@ -298,43 +249,12 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
     return { startDate, endDate, dataPoints }
   }
 
-  // Función para convertir una fecha a la zona horaria local
-  const toLocalDate = (date: Date): Date => {
-    const localDate = new Date(date);
-    localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
-    return localDate;
-  };
-
-  // Función para obtener la hora local de una fecha
-  const getLocalHour = (date: Date): number => {
-    return toLocalDate(date).getHours();
-  };
-
   const processDataByRange = (
     dataPoints: Date[], 
     salesData: any[], 
     quotesData: any[],
     cashFlowData: any[]
   ): ChartData[] => {
-    console.log('=== Starting processDataByRange ===');
-    console.log('Data points count:', dataPoints.length);
-    console.log('Sales records:', salesData.length);
-    console.log('Quotes records:', quotesData.length);
-    console.log('Cash flow records:', cashFlowData.length);
-    
-    if (cashFlowData.length > 0) {
-      console.log('First cash flow record:', {
-        ...cashFlowData[0],
-        created_at: new Date(cashFlowData[0].created_at).toLocaleString(),
-        localDate: toLocalDate(new Date(cashFlowData[0].created_at)).toLocaleString()
-      });
-    }
-    console.log('Processing data points:', dataPoints.length);
-    console.log('Sales data count:', salesData.length);
-    console.log('Quotes data count:', quotesData.length);
-    console.log('Cash flow data count:', cashFlowData.length);
-
-    // Inicializar los datos del gráfico con valores en cero
     const resultData = dataPoints.map((point: Date) => {
       const displayDate = dateRange === "day" 
         ? format(point, "HH:mm", { locale: es })
@@ -352,153 +272,87 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
       };
     });
 
-    // Procesar ventas
-    salesData.forEach((sale: any) => {
-      if (!sale || !sale.created_at) return;
+    cashFlowData.forEach((flow: any) => {
+      if (!flow || !flow.created_at) return;
       
-      const saleDate = new Date(sale.created_at);
-      const localSaleDate = toLocalDate(saleDate);
+      // Parsear la fecha de forma segura. Si no tiene indicador de zona horaria, 
+      // y es solo fecha YYYY-MM-DD, la tratamos como hora local.
+      let flowDate: Date;
+      const dateStr = flow.created_at.toString();
       
-      // Encontrar el índice del punto de datos correspondiente
-      const dataIndex = dateRange === "day"
-        ? getLocalHour(saleDate)  // Usar la hora local para el índice
-        : dataPoints.findIndex((dp: Date) => 
-            dp.getDate() === localSaleDate.getDate() &&
-            dp.getMonth() === localSaleDate.getMonth() &&
-            dp.getFullYear() === localSaleDate.getFullYear()
-          );
-      
-      if (dataIndex >= 0 && dataIndex < resultData.length) {
-        const total = parseFloat(sale.total) || 0;
-        resultData[dataIndex].ventas += total;
-        resultData[dataIndex].ventasCount++;
+      if (dateStr.length === 10 && dateStr.includes('-')) {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        flowDate = new Date(y, m - 1, d);
+      } else {
+        flowDate = new Date(flow.created_at);
       }
-    });
-
-    // Procesar cotizaciones
-    quotesData.forEach((quote: any) => {
-      if (!quote || !quote.created_at) return;
-      
-      const quoteDate = new Date(quote.created_at);
-      const localQuoteDate = toLocalDate(quoteDate);
-      
-      // Encontrar el índice del punto de datos correspondiente
-      const dataIndex = dateRange === "day"
-        ? getLocalHour(quoteDate)  // Usar la hora local para el índice
-        : dataPoints.findIndex((dp: Date) => 
-            dp.getDate() === localQuoteDate.getDate() &&
-            dp.getMonth() === localQuoteDate.getMonth() &&
-            dp.getFullYear() === localQuoteDate.getFullYear()
-          );
-      
-      if (dataIndex >= 0 && dataIndex < resultData.length) {
-        const total = parseFloat(quote.total) || 0;
-        resultData[dataIndex].cotizaciones += total;
-        resultData[dataIndex].cotizacionesCount++;
-      }
-    });
-
-    // Procesar movimientos de efectivo
-    console.log('Processing cash flow data:', cashFlowData);
-    cashFlowData.forEach((flow: any, index: number) => {
-      if (!flow || !flow.created_at) {
-        console.log(`Skipping cash flow record ${index}: missing created_at`);
-        return;
-      }
-      
-      const flowDate = new Date(flow.created_at);
-      const localFlowDate = toLocalDate(flowDate);
-      
-      console.log(`Cash flow record ${index}:`, {
-        created_at: flow.created_at,
-        localDate: localFlowDate.toString(),
-        type: flow.type,
-        amount: flow.amount
-      });
-      
-      // Encontrar el índice del punto de datos correspondiente
       let dataIndex = -1;
       
       if (dateRange === "day") {
-        // Para vista diaria, agrupar por hora
-        const hour = getLocalHour(flowDate);
-        dataIndex = dataPoints.findIndex((dp: Date) => {
-          const dpHour = getLocalHour(dp);
-          return dpHour === hour;
-        });
-        
-        console.log(`Matching hour ${hour} to data index ${dataIndex}`);
+        const hour = flowDate.getHours();
+        dataIndex = dataPoints.findIndex((dp: Date) => dp.getHours() === hour);
       } else {
-        // Para vista semanal o mensual, agrupar por día
-        dataIndex = dataPoints.findIndex((dp: Date) => {
-          const match = 
-            dp.getDate() === localFlowDate.getDate() &&
-            dp.getMonth() === localFlowDate.getMonth() &&
-            dp.getFullYear() === localFlowDate.getFullYear();
-          
-          if (match) {
-            console.log(`Matched date: ${dp.toISOString()} with ${localFlowDate.toISOString()} at index ${dataIndex}`);
-          }
-          
-          return match;
-        });
+        dataIndex = dataPoints.findIndex((dp: Date) => 
+          dp.getDate() === flowDate.getDate() &&
+          dp.getMonth() === flowDate.getMonth() &&
+          dp.getFullYear() === flowDate.getFullYear()
+        );
       }
       
       if (dataIndex >= 0 && dataIndex < resultData.length) {
         const amount = parseFloat(flow.amount) || 0;
-        console.log(`Adding ${flow.type} of ${amount} to index ${dataIndex}`);
-        
-        if (flow.type === 'entrada') {
-          resultData[dataIndex].entradas += amount;
-        } else if (flow.type === 'salida') {
-          resultData[dataIndex].salidas += Math.abs(amount);
-        }
-        
-        console.log(`Updated data at index ${dataIndex}:`, resultData[dataIndex]);
-      } else {
-        console.log(`No matching time slot found for cash flow record at ${flow.created_at}`);
+        if (flow.type === "entrada") resultData[dataIndex].entradas += amount;
+        else if (flow.type === "salida") resultData[dataIndex].salidas += amount;
       }
     });
 
-    console.log('Processed chart data:', resultData);
+    salesData.forEach((s: any) => {
+      const d = new Date(s.created_at);
+      const idx = dateRange === "day" 
+        ? dataPoints.findIndex(dp => dp.getHours() === d.getHours())
+        : dataPoints.findIndex(dp => dp.getDate() === d.getDate() && dp.getMonth() === d.getMonth());
+      if (idx >= 0 && idx < resultData.length) {
+        resultData[idx].ventas += parseFloat(s.total) || 0;
+        resultData[idx].ventasCount++;
+      }
+    });
+
+    quotesData.forEach((q: any) => {
+      const d = new Date(q.created_at);
+      const idx = dateRange === "day" 
+        ? dataPoints.findIndex(dp => dp.getHours() === d.getHours())
+        : dataPoints.findIndex(dp => dp.getDate() === d.getDate() && dp.getMonth() === d.getMonth());
+      if (idx >= 0 && idx < resultData.length) {
+        resultData[idx].cotizaciones += 1;
+        resultData[idx].cotizacionesCount++;
+      }
+    });
+
     return resultData;
   }
 
-  // Generar datos de ejemplo cuando no hay datos reales
   const generateDemoData = (): ChartData[] => {
     const { dataPoints } = getDateRange()
     return dataPoints.map((point) => {
-      let displayDate = ""
-      if (dateRange === "day") {
-        displayDate = format(point, "HH:mm", { locale: es })
-      } else {
-        displayDate = format(point, "dd/MM", { locale: es })
-      }
-
-      const ventas = Math.floor(Math.random() * 2000) + 500
-      const cotizaciones = Math.floor(Math.random() * 3000) + 1000
-      const ventasCount = Math.floor(Math.random() * 5) + 1
-      const cotizacionesCount = Math.floor(Math.random() * 8) + 2
-      const entradas = Math.floor(Math.random() * 2500) + 1000
-      const salidas = Math.floor(Math.random() * 2000) + 500
+      const displayDate = dateRange === "day" 
+        ? format(point, "HH:mm", { locale: es })
+        : format(point, "dd/MM", { locale: es });
 
       return {
         date: point.toISOString(),
         displayDate,
-        ventas,
-        cotizaciones,
-        ventasCount,
-        cotizacionesCount,
-        entradas,
-        salidas
+        ventas: 0,
+        cotizaciones: 0,
+        ventasCount: 0,
+        cotizacionesCount: 0,
+        entradas: Math.floor(Math.random() * 2500) + 1000,
+        salidas: Math.floor(Math.random() * 2000) + 500
       } as ChartData
     })
   }
 
-  // Navegar entre fechas
   const navigateDate = (direction: "prev" | "next") => {
     const newDate = new Date(selectedDate)
-    
     if (dateRange === 'day') {
       newDate.setDate(selectedDate.getDate() + (direction === 'next' ? 1 : -1))
     } else if (dateRange === 'week') {
@@ -506,27 +360,8 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
     } else if (dateRange === 'month') {
       newDate.setMonth(selectedDate.getMonth() + (direction === 'next' ? 1 : -1))
     }
-    
     setSelectedDate(newDate)
   }
-
-  // Manejar cambio de preset
-  const handlePresetChange = useCallback((value: string) => {
-    console.log('Changing preset to:', value);
-    const preset = CHART_PRESETS.find(p => p.key === value) || CHART_PRESETS[0];
-    console.log('New preset:', preset);
-    
-    const newSeries = preset.series.map(s => s.key);
-    console.log('Setting selected series:', newSeries);
-    
-    setSelectedPreset(preset);
-    setSelectedSeries(newSeries);
-    
-    // Guardar preferencia en localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('chartPreset', preset.key);
-    }
-  }, []);
 
   // Tooltip personalizado para mostrar nombres y colores correctos
   interface CustomTooltipProps {
@@ -584,97 +419,77 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
     );
   };
 
-  // Procesar datos según series seleccionadas
-  const processedData = chartData.map((item) => {
-    const obj: Record<string, any> = { displayDate: item.displayDate }
-    
-    // Agregar solo las series que están seleccionadas
-    selectedSeries.forEach(seriesKey => {
-      if (['ventas', 'cotizaciones'].includes(seriesKey)) {
-        obj[seriesKey] = chartType === 'amount' 
-          ? item[seriesKey as keyof ChartData] as number 
-          : item[`${seriesKey}Count` as keyof ChartData] as number
-      } else if (['entradas', 'salidas'].includes(seriesKey)) {
-        obj[seriesKey] = item[seriesKey as keyof ChartData] as number
-      }
-    })
-    
-    return obj as Record<string, any>
-  })
-
-  // Renderizar la gráfica según las series seleccionadas
+  // Renderizar la gráfica exclusivamente para flujo de efectivo
   const renderChart = () => {
-    console.log('Rendering chart with data:', processedData);
-    console.log('Selected preset:', selectedPreset);
-    console.log('Selected series:', selectedSeries);
-    
-    // Verificar datos de series seleccionadas
-    selectedSeries.forEach(key => {
-      const hasData = processedData.some(item => item[key] > 0);
-      console.log(`Series ${key} has data:`, hasData);
-      if (!hasData) {
-        console.log(`No data found for series: ${key}`);
-      }
-    });
-    
     const commonProps = {
-      data: processedData,
-      margin: { top: 5, right: 30, left: 20, bottom: 5 },
+      data: chartData, // Usamos directamente chartData ya que no hay filtros adicionales
+      margin: { top: 20, right: 30, left: 10, bottom: 0 },
     }
-
-    const renderSeries = () => {
-      console.log('Rendering series for:', selectedSeries);
-      
-      return selectedSeries.map(key => {
-        const series = ALL_SERIES[key as keyof typeof ALL_SERIES];
-        if (!series) return null;
-        
-        console.log(`Rendering series ${series.key} with color ${series.color}`);
-        
-        const seriesProps = {
-          key: series.key,
-          name: series.label,
-          dataKey: series.key,
-          stroke: series.color,
-          fill: series.color,
-          strokeWidth: 2
-        };
-
-        return viewType === 'bar' ? (
-          <Bar {...seriesProps} />
-        ) : (
-          <Line type="monotone" {...seriesProps} />
-        );
-      });
-    }
-
-    const ChartComponent = viewType === 'bar' ? BarChart : LineChart
 
     return (
-      <div className="w-full h-[300px] relative">
+      <div className="w-full h-[500px] relative mt-10">
         <ResponsiveContainer width="100%" height="100%">
-          <ChartComponent {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="displayDate" 
-              tick={{ fontSize: 12 }}
-              tickMargin={8}
-            />
-            <YAxis 
-              tickFormatter={selectedPreset.key === 'ventas_cotizaciones' && chartType === 'amount' 
-                ? (value: number) => `$${value.toLocaleString()}` 
-                : undefined}
-              tick={{ fontSize: 12 }}
-              tickMargin={8}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            {renderSeries()}
-          </ChartComponent>
+          {viewType === 'bar' ? (
+            <BarChart {...commonProps}>
+              <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="displayDate" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 13, fill: '#64748b', fontWeight: 700 }}
+                tickMargin={15}
+              />
+              <YAxis hide={true} />
+              <Tooltip 
+                content={<CustomTooltip />} 
+                cursor={{ fill: '#f8fafc' }}
+              />
+              {CHART_CONFIG.series.map((s) => (
+                <Bar
+                  key={s.key}
+                  dataKey={s.key}
+                  name={s.label}
+                  fill={s.color}
+                  radius={[10, 10, 0, 0]}
+                  barSize={54}
+                  animationDuration={1500}
+                />
+              ))}
+            </BarChart>
+          ) : (
+            <LineChart {...commonProps}>
+              <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="displayDate" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 13, fill: '#64748b', fontWeight: 700 }}
+                tickMargin={15}
+              />
+              <YAxis hide={true} />
+              <Tooltip 
+                content={<CustomTooltip />} 
+                cursor={{ stroke: '#e2e8f0', strokeWidth: 2 }}
+              />
+              {CHART_CONFIG.series.map((s) => (
+                <Line
+                  key={s.key}
+                  type="monotone"
+                  dataKey={s.key}
+                  name={s.label}
+                  stroke={s.color}
+                  strokeWidth={8}
+                  dot={{ r: 8, fill: s.color, strokeWidth: 4, stroke: '#fff' }}
+                  activeDot={{ r: 12, strokeWidth: 0 }}
+                  animationDuration={1500}
+                />
+              ))}
+            </LineChart>
+          )}
         </ResponsiveContainer>
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[4px] rounded-3xl">
+            <Loader2 className="h-8 w-8 animate-spin text-[#10b981]" />
           </div>
         )}
       </div>
@@ -682,154 +497,97 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Análisis de Ventas y Cotizaciones
-          </CardTitle>
-          <div className="flex flex-wrap gap-2">
-            {/* Navegación de fechas */}
-            <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}> <ChevronLeft className="h-4 w-4" /> </Button>
-              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-[140px] bg-transparent">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    {format(selectedDate, "dd/MM/yyyy", { locale: es })}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center" side="bottom" sideOffset={4}>
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setSelectedDate(date)
-                        setIsCalendarOpen(false)
-                      }
-                    }}
-                    initialFocus
-                    className="rounded-md border-0"
-                    classNames={{
-                      months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                      month: "space-y-4",
-                      caption: "flex justify-center pt-1 relative items-center",
-                      caption_label: "text-sm font-medium",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      table: "w-full border-collapse space-y-1",
-                      head_row: "flex",
-                      head_cell: "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]",
-                      row: "flex w-full mt-2",
-                      cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                      day: "h-8 w-8 p-0 font-normal aria-selected:opacity-100",
-                      day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                      day_today: "bg-accent text-accent-foreground",
-                      day_outside: "text-muted-foreground opacity-50",
-                      day_disabled: "text-muted-foreground opacity-50",
-                      day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                      day_hidden: "invisible",
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Button variant="outline" size="sm" onClick={() => navigateDate("next")}> <ChevronRight className="h-4 w-4" /> </Button>
-            </div>
-            {/* Selector de rango */}
-            <Select value={dateRange} onValueChange={(value: any) => setDateRange(value)}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">Día</SelectItem>
-                <SelectItem value="week">Semana</SelectItem>
-                <SelectItem value="month">Mes</SelectItem>
-              </SelectContent>
-            </Select>
-            {/* Selector de tipo de datos */}
-            <Select value={chartType} onValueChange={(value: any) => setChartType(value)}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="amount">Montos</SelectItem>
-                <SelectItem value="count">Cantidad</SelectItem>
-              </SelectContent>
-            </Select>
-            {/* Selector de preset */}
-            <Select 
-              value={selectedPreset.key}
-              onValueChange={handlePresetChange}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Seleccionar vista">
-                  {selectedPreset.label}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {CHART_PRESETS.map((preset) => (
-                  <SelectItem 
-                    key={preset.key} 
-                    value={preset.key}
-                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                  >
-                    {preset.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Selector de tipo de gráfica */}
-            <div className="flex gap-1">
-              <Button variant={viewType === "bar" ? "default" : "outline"} size="sm" onClick={() => setViewType("bar")}> <BarChart3 className="h-4 w-4" /> </Button>
-              <Button variant={viewType === "line" ? "default" : "outline"} size="sm" onClick={() => setViewType("line")}> <LineChartIcon className="h-4 w-4" /> </Button>
-            </div>
-            {/* Botón de actualizar */}
-            <Button variant="outline" size="sm" onClick={fetchChartData} disabled={loading}>
-              {loading ? "Cargando..." : "Actualizar"}
-            </Button>
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8">
+        <div className="space-y-2">
+          <CardTitle className="text-5xl font-black text-slate-900 tracking-tight">Análisis de Entradas Monetarias</CardTitle>
+          <p className="text-base font-bold text-slate-400 uppercase tracking-[0.2em]">Flujo de caja y movimientos</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Navegación de fechas */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-2xl border border-slate-100">
+            <Button variant="ghost" size="icon" onClick={() => navigateDate("prev")} className="h-9 w-9 rounded-xl hover:bg-white hover:shadow-sm"> <ChevronLeft className="h-4 w-4" /> </Button>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-9 px-4 rounded-xl font-bold text-slate-700 hover:bg-white hover:shadow-sm">
+                  <CalendarIcon className="h-4 w-4 mr-2 text-[#10b981]" />
+                  {format(selectedDate, "MMM yyyy", { locale: es })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 rounded-3xl shadow-2xl border-none" align="center">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedDate(date)
+                      setIsCalendarOpen(false)
+                    }
+                  }}
+                  initialFocus
+                  className="rounded-3xl border-0 p-4"
+                  locale={es}
+                />
+              </PopoverContent>
+            </Popover>
+            <Button variant="ghost" size="icon" onClick={() => navigateDate("next")} className="h-9 w-9 rounded-xl hover:bg-white hover:shadow-sm"> <ChevronRight className="h-4 w-4" /> </Button>
+          </div>
 
-            {/* Botón de debug para verificar configuración */}
-            {/* <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => {
-                const saved = localStorage.getItem(STORAGE_KEY)
-                console.log("Configuración actual en localStorage:", saved ? JSON.parse(saved) : "No hay configuración")
-                console.log("Estado actual:", {
-                  chartType,
-                  viewType,
-                  dateRange,
-                  selectedSeries,
-                  selectedDate: selectedDate.toISOString(),
-                })
-              }}
+          <Select value={dateRange} onValueChange={(value: any) => setDateRange(value)}>
+            <SelectTrigger className="w-[120px] h-11 bg-slate-50 border-slate-100 rounded-2xl font-bold text-slate-700 focus:ring-[#10b981]/20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+              <SelectItem value="day" className="font-bold">Vista Diaria</SelectItem>
+              <SelectItem value="week" className="font-bold">Vista Semanal</SelectItem>
+              <SelectItem value="month" className="font-bold">Vista Mensual</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100 h-11">
+            <Button
+               variant={viewType === "bar" ? "secondary" : "ghost"}
+               size="icon"
+               className={cn("h-9 w-9 rounded-xl transition-all", viewType === "bar" ? "bg-white shadow-sm text-[#10b981]" : "text-slate-400")}
+               onClick={() => setViewType("bar")}
             >
-              Debug
-            </Button> */}
+              <BarChartIcon className="h-4 w-4" />
+            </Button>
+            <Button
+               variant={viewType === "line" ? "secondary" : "ghost"}
+               size="icon"
+               className={cn("h-9 w-9 rounded-xl transition-all", viewType === "line" ? "bg-white shadow-sm text-[#10b981]" : "text-slate-400")}
+               onClick={() => setViewType("line")}
+            >
+              <LineChartIcon className="h-4 w-4" />
+            </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex items-center justify-center h-[300px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+      
+      {loading && chartData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-[500px] space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-[#10b981]" />
+          <p className="text-base font-black text-slate-400 uppercase tracking-widest">Cargando análisis...</p>
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center h-[500px] bg-rose-50/30 rounded-[32px] border border-dashed border-rose-100 p-8 text-center">
+          <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mb-4">
+            <RefreshCw className="h-10 w-10 text-rose-500" />
           </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-[300px] text-red-600">
-            <p>{error}</p>
-          </div>
-        ) : chartData.length === 0 ? (
-          <div className="flex items-center justify-center h-[300px] text-gray-500">
-            <p>No se encontraron registros.</p>
-          </div>
-        ) : (
-          renderChart()
-        )}
-      </CardContent>
-    </Card>
+          <p className="text-xl font-black text-slate-900 mb-2">Error al sincronizar datos</p>
+          <p className="text-base font-bold text-slate-400 mb-6">{error}</p>
+          <Button variant="outline" className="rounded-2xl border-rose-200 text-rose-600 font-black px-10 h-12" onClick={fetchChartData}>
+            REINTENTAR
+          </Button>
+        </div>
+      ) : chartData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-[500px] bg-slate-50/50 rounded-[40px] border border-dashed border-slate-200 p-8 text-center">
+          <p className="text-xl font-black text-slate-400 uppercase tracking-widest">No hay registros para este periodo</p>
+        </div>
+      ) : (
+        renderChart()
+      )}
+    </div>
   )
 }

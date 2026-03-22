@@ -50,6 +50,17 @@ export default function PDFInvoiceProcessor() {
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set())
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  const resetForm = () => {
+    setSelectedFile(null)
+    setResult(null)
+    setProcessing(false)
+    setProgress(0)
+    setSelectedProducts(new Set())
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
 
   // Función para extraer texto del PDF usando la API route
   const extractTextFromPDF = async (file: File): Promise<string> => {
@@ -450,230 +461,229 @@ export default function PDFInvoiceProcessor() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="bg-blue-50 border-blue-200 hover:bg-blue-100">
-          <FileText className="h-4 w-4 mr-2" />
+        <Button onClick={resetForm} variant="outline" className="h-16 rounded-3xl border-slate-200 hover:border-slate-300 hover:bg-slate-50 font-black px-8 text-xs uppercase tracking-widest transition-all">
+          <FileText className="h-5 w-5 mr-3 text-slate-400" />
           Procesar Factura PDF
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Extraer Productos de Factura PDF
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Instrucciones */}
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Instrucciones:</strong> Sube una factura en PDF de tu proveedor. El sistema extraerá
-              automáticamente los productos usando la CLAVE como SKU, calculará el costo (precio + 16% IVA) y el precio
-              de venta (costo + 35%).
-            </AlertDescription>
-          </Alert>
-
-          {/* Selección de archivo */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="pdf-file">Seleccionar Factura PDF</Label>
-              <Input id="pdf-file" type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileSelect} />
-            </div>
-
-            {selectedFile && (
-              <Card className="border-green-200 bg-green-50">
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium">{selectedFile.name}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </Badge>
-                    </div>
-                    <Button onClick={processInvoice} disabled={processing} size="sm">
-                      <Upload className="h-4 w-4 mr-2" />
-                      {processing ? "Procesando..." : "Procesar"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto rounded-[44px] border-none shadow-2xl p-0">
+        <div className="bg-[#f8fafc] min-h-full">
+          {/* Header del Dialog */}
+          <div className="p-10 pb-6">
+            <DialogHeader>
+              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter flex items-center gap-4">
+                <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white">
+                  <Package className="h-6 w-6" />
+                </div>
+                Extraccion <span className="text-emerald-500">Inteligente.</span>
+              </DialogTitle>
+            </DialogHeader>
           </div>
 
-          {/* Progreso */}
-          {processing && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Procesando factura...</span>
-                <span>{progress}%</span>
+          <div className="px-10 pb-10 space-y-8">
+            {/* Instrucciones con Big UI Alert */}
+            <div className="p-8 bg-white rounded-[32px] border border-slate-100 shadow-sm flex items-start gap-6">
+              <div className="p-4 bg-emerald-50 rounded-2xl text-emerald-600">
+                <AlertTriangle className="h-8 w-8" />
               </div>
-              <Progress value={progress} />
+              <div>
+                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">Protocolo de Importación</h4>
+                <p className="text-slate-500 font-medium leading-relaxed">
+                  Sube una factura en PDF de tu proveedor. El motor de IA identificará automáticamente los productos, 
+                  calculará costos basados en un <span className="text-slate-900 font-black">16% IVA</span> y sugerirá 
+                  precios de venta con un <span className="text-slate-900 font-black">35% de margen operativo.</span>
+                </p>
+              </div>
             </div>
-          )}
 
-          {/* Resultados */}
-          {result && (
+            {/* Selección de archivo */}
             <div className="space-y-4">
-              {/* Información de la factura */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Información de la Factura</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <Label className="text-sm text-gray-600">Proveedor</Label>
-                    <p className="font-medium">{result.invoiceInfo.supplier || "No detectado"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">Folio</Label>
-                    <p className="font-medium">{result.invoiceInfo.folio || "No detectado"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">Fecha</Label>
-                    <p className="font-medium">{result.invoiceInfo.date || "No detectada"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">Total</Label>
-                    <p className="font-medium">${result.invoiceInfo.total.toFixed(2)}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Canal de Carga de Factura</Label>
+              <div className="group relative">
+                <Input
+                  id="pdf-file"
+                  type="file"
+                  accept=".pdf"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button 
+                  type="button" 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-32 border-2 border-dashed border-slate-200 rounded-[32px] bg-white group-hover:border-emerald-400 group-hover:bg-emerald-50 transition-all flex flex-col items-center justify-center gap-3"
+                >
+                  <Upload className="h-8 w-8 text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                  <span className="text-sm font-black text-slate-400 group-hover:text-emerald-600 transition-colors uppercase tracking-widest">
+                    {selectedFile ? selectedFile.name : "Click para cargar o arrastra tu PDF aquí"}
+                  </span>
+                </Button>
+              </div>
 
-              {/* Alertas */}
-              {result.errors.length > 0 && (
-                <Alert className="border-red-200 bg-red-50">
-                  <XCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription>
-                    <strong>Errores:</strong>
-                    <ul className="list-disc list-inside mt-1">
-                      {result.errors.map((error, i) => (
-                        <li key={i} className="text-sm">
-                          {error}
-                        </li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {result.warnings.length > 0 && (
-                <Alert className="border-yellow-200 bg-yellow-50">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  <AlertDescription>
-                    <strong>Advertencias:</strong>
-                    <ul className="list-disc list-inside mt-1">
-                      {result.warnings.map((warning, i) => (
-                        <li key={i} className="text-sm">
-                          {warning}
-                        </li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Productos extraídos */}
-              {result.extractedProducts.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>Productos Extraídos ({result.extractedProducts.length})</span>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedProducts(new Set(result.extractedProducts.map((_, i) => i)))}
-                        >
-                          Seleccionar Todos
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => setSelectedProducts(new Set())}>
-                          Deseleccionar Todos
-                        </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-12">
-                              <input
-                                type="checkbox"
-                                checked={selectedProducts.size === result.extractedProducts.length}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedProducts(new Set(result.extractedProducts.map((_, i) => i)))
-                                  } else {
-                                    setSelectedProducts(new Set())
-                                  }
-                                }}
-                              />
-                            </TableHead>
-                            <TableHead>Cant.</TableHead>
-                            <TableHead>Clave (SKU)</TableHead>
-                            <TableHead>Descripción</TableHead>
-                            <TableHead>Precio s/IVA</TableHead>
-                            <TableHead>Costo c/IVA</TableHead>
-                            <TableHead>Precio Venta</TableHead>
-                            <TableHead>Categoría</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {result.extractedProducts.map((product, index) => (
-                            <TableRow key={index}>
-                              <TableCell>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedProducts.has(index)}
-                                  onChange={() => toggleProductSelection(index)}
-                                />
-                              </TableCell>
-                              <TableCell className="font-medium">{product.quantity}</TableCell>
-                              <TableCell className="font-mono text-sm">{product.clave}</TableCell>
-                              <TableCell className="max-w-xs">
-                                <div className="truncate" title={product.description}>
-                                  {product.description}
-                                </div>
-                              </TableCell>
-                              <TableCell>${product.unitPriceWithoutTax.toFixed(2)}</TableCell>
-                              <TableCell className="font-medium text-blue-600">${product.cost.toFixed(2)}</TableCell>
-                              <TableCell className="font-medium text-green-600">
-                                ${product.sellingPrice.toFixed(2)}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{product.suggestedCategory}</Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Botones de acción */}
-              {result.extractedProducts.length > 0 && (
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={saveSelectedProducts}
-                    disabled={selectedProducts.size === 0 || saving}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {saving ? "Guardando..." : `Guardar ${selectedProducts.size} Productos`}
+              {selectedFile && !result && !processing && (
+                <div className="flex justify-center pt-4">
+                  <Button onClick={processInvoice} className="h-16 px-12 rounded-3xl bg-slate-900 text-white font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all">
+                    <Upload className="h-5 w-5 mr-3" />
+                    Iniciar Procesamiento
                   </Button>
                 </div>
               )}
             </div>
-          )}
+
+            {/* Progreso */}
+            {processing && (
+              <div className="p-10 bg-white rounded-[40px] shadow-sm animate-pulse">
+                <div className="flex justify-between items-center mb-6">
+                  <span className="text-xl font-black text-slate-900 tracking-tighter">Analizando Estructura PDF...</span>
+                  <span className="text-2xl font-black text-emerald-500 italic">{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-4 bg-slate-100 rounded-full overflow-hidden" />
+              </div>
+            )}
+
+            {/* Resultados */}
+            {result && (
+              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Información de la factura */}
+                <Card className="border-none shadow-sm rounded-[40px] bg-white p-8">
+                  <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Metadata de Factura</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
+                    <div>
+                      <Label className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Proveedor</Label>
+                      <p className="text-xl font-black text-slate-900 tracking-tight mt-1">{result.invoiceInfo.supplier || "N/A"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Folio Fiscal</Label>
+                      <p className="text-xl font-black text-slate-900 tracking-tight mt-1">#{result.invoiceInfo.folio || "N/A"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Fecha Emision</Label>
+                      <p className="text-xl font-black text-slate-900 tracking-tight mt-1 italic">{result.invoiceInfo.date || "N/A"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Monto Total</Label>
+                      <p className="text-3xl font-black text-emerald-500 tracking-tighter mt-1 italic">${result.invoiceInfo.total.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Productos extraídos */}
+                {result.extractedProducts.length > 0 && (
+                  <Card className="border-none shadow-sm rounded-[44px] overflow-hidden bg-white p-4">
+                    <CardHeader className="p-8 pb-4">
+                      <CardTitle className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                        <div>
+                          <span className="text-3xl font-black text-slate-900 tracking-tighter">Items Detectados.</span>
+                          <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">{result.extractedProducts.length} registros extraídos</p>
+                        </div>
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setSelectedProducts(new Set(result.extractedProducts.map((_, i) => i)))}
+                            className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-500"
+                          >
+                            Seleccionar Todo
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setSelectedProducts(new Set())}
+                            className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500"
+                          >
+                            Limpiar
+                          </Button>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-slate-50 hover:bg-transparent">
+                              <TableHead className="w-16 px-8 h-16"></TableHead>
+                              <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">CANT.</TableHead>
+                              <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">CLAVE / SKU</TableHead>
+                              <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">DESCRIPCIÓN</TableHead>
+                              <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">COSTO FINAL</TableHead>
+                              <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">P. VENTA</TableHead>
+                              <TableHead className="h-16 px-8 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">CATEGORÍA</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {result.extractedProducts.map((product, index) => (
+                              <TableRow key={index} className="group border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                <TableCell className="px-8 py-6">
+                                  <div className="flex items-center justify-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedProducts.has(index)}
+                                      onChange={() => toggleProductSelection(index)}
+                                      className="w-6 h-6 rounded-lg border-2 border-slate-200 checked:bg-emerald-500 checked:border-emerald-500 transition-all cursor-pointer"
+                                    />
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-6 font-black text-lg text-slate-900 italic">
+                                  {product.quantity}
+                                </TableCell>
+                                <TableCell className="py-6">
+                                  <Badge className="bg-slate-100 text-slate-600 border-none font-black px-4 py-1.5 rounded-xl uppercase text-[10px] tracking-widest italic">
+                                    {product.clave}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="py-6 max-w-xs">
+                                  <div className="text-sm font-bold text-slate-900 uppercase leading-relaxed tracking-tight" title={product.description}>
+                                    {product.description}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-6">
+                                  <div className="text-xl font-black text-blue-500 tracking-tighter">
+                                    ${product.cost.toFixed(2)}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-6">
+                                  <div className="text-xl font-black text-emerald-500 tracking-tighter shadow-[0_0_20px_rgba(16,185,129,0.1)] inline-block">
+                                    ${product.sellingPrice.toFixed(2)}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-6 px-8">
+                                  <Badge className="bg-emerald-50 text-emerald-600 border-none font-black px-4 py-1.5 rounded-xl uppercase text-[10px] tracking-widest italic whitespace-nowrap">
+                                    {product.suggestedCategory}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Botones de acción final */}
+                {result.extractedProducts.length > 0 && (
+                  <div className="flex flex-col md:flex-row justify-end items-center gap-6 p-8 bg-slate-100/50 rounded-[40px] border border-slate-100">
+                    <div className="flex-1">
+                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Confirmacion Final</p>
+                      <p className="text-xl font-black text-slate-900 tracking-tighter">Se integrarán <span className="text-emerald-500 italic">{selectedProducts.size}</span> nuevos productos al catálogo.</p>
+                    </div>
+                    <div className="flex gap-4 w-full md:w-auto">
+                      <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="h-16 flex-1 md:flex-none px-10 rounded-3xl font-black uppercase text-xs tracking-widest text-slate-400">Descartar</Button>
+                      <Button
+                        onClick={saveSelectedProducts}
+                        disabled={selectedProducts.size === 0 || saving}
+                        className="h-16 flex-1 md:flex-none px-12 rounded-3xl bg-[#10b981] text-white font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all"
+                      >
+                        <Save className="h-5 w-5 mr-3" />
+                        {saving ? "Integrando..." : "Integrar al Sistema"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

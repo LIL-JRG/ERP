@@ -1,5 +1,12 @@
 import type { Metadata } from 'next'
+import { Bricolage_Grotesque } from 'next/font/google'
 import './globals.css'
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+  variable: '--font-bricolage',
+})
 
 export const metadata: Metadata = {
   title: 'H2R ERP',
@@ -22,7 +29,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="apple-touch-icon" href="/placeholder-logo.png" />
       </head>
-      <body>{children}</body>
+      <body className={`${bricolage.variable} font-sans`}>{children}</body>
     </html>
   )
 }

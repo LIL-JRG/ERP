@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Camera, Search, XCircle, Package } from "lucide-react"
 import { BarcodeDetector } from "barcode-detector"
+import { cn } from "@/lib/utils"
 
 interface Product {
   id: string
@@ -37,47 +38,28 @@ export default function BarcodeScanner() {
   const detectorRef = useRef<any>(null)
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Inicializar detector de códigos de barras
   useEffect(() => {
     const initBarcodeDetector = async () => {
       try {
-        // Verificar si BarcodeDetector está disponible
         if ("BarcodeDetector" in window) {
           // @ts-ignore
           detectorRef.current = new BarcodeDetector({
-            formats: [
-              "code_128",
-              "code_39",
-              "code_93",
-              "ean_13",
-              "ean_8",
-              "upc_a",
-              "upc_e",
-              "itf", // Interleaved 2 of 5
-              "qr_code",
-              "data_matrix",
-              "pdf417",
-            ],
+            formats: ["code_128", "code_39", "code_93", "ean_13", "ean_8", "upc_a", "upc_e", "itf", "qr_code", "data_matrix", "pdf417"],
           })
-          console.log("BarcodeDetector initialized successfully")
-        } else {
-          console.log("BarcodeDetector not supported, using fallback")
         }
       } catch (error) {
         console.error("Error initializing BarcodeDetector:", error)
       }
     }
-
     initBarcodeDetector()
   }, [])
 
   const startCamera = async () => {
     try {
       setError(null)
-
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: "environment", // Usar cámara trasera
+          facingMode: "environment",
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
@@ -87,12 +69,9 @@ export default function BarcodeScanner() {
         videoRef.current.srcObject = stream
         streamRef.current = stream
         setIsScanning(true)
-
-        // Iniciar detección automática
         startBarcodeDetection()
       }
     } catch (error) {
-      console.error("Error accessing camera:", error)
       setError("No se pudo acceder a la cámara. Verifica los permisos.")
     }
   }
@@ -107,63 +86,42 @@ export default function BarcodeScanner() {
       clearInterval(scanIntervalRef.current)
       scanIntervalRef.current = null
     }
-
     setIsScanning(false)
   }
 
   const startBarcodeDetection = () => {
-    if (!detectorRef.current || !videoRef.current) {
-      console.log("Detector or video not available")
-      return
-    }
+    if (!detectorRef.current || !videoRef.current) return
 
     scanIntervalRef.current = setInterval(async () => {
       try {
         if (videoRef.current && videoRef.current.readyState === 4) {
           const barcodes = await detectorRef.current.detect(videoRef.current)
-
           if (barcodes.length > 0) {
-            const barcode = barcodes[0]
-            console.log("Barcode detected:", barcode.rawValue, "Format:", barcode.format)
-
-            // Detener la cámara y buscar el producto
             stopCamera()
-            await searchProduct(barcode.rawValue)
+            await searchProduct(barcodes[0].rawValue)
           }
         }
       } catch (error) {
-        console.error("Error detecting barcode:", error)
+        console.error("Detection error:", error)
       }
-    }, 500) // Escanear cada 500ms
+    }, 500)
   }
 
   const searchProduct = async (code: string) => {
     setLoading(true)
     setError(null)
-
     try {
-      console.log("Searching for product with code:", code)
-
-      // Buscar producto por SKU
       const { data: product, error: searchError } = await supabase.from("products").select("*").eq("sku", code).single()
-
-      if (searchError && searchError.code !== "PGRST116") {
-        throw searchError
-      }
+      if (searchError && searchError.code !== "PGRST116") throw searchError
 
       const result: ScanResult = {
         code,
         product: product || null,
         timestamp: new Date().toISOString(),
       }
-
       setScanResult(result)
-
-      if (!product) {
-        setError(`No se encontró ningún producto con el código: ${code}`)
-      }
+      if (!product) setError(`No se encontró el código: ${code}`)
     } catch (error) {
-      console.error("Error searching product:", error)
       setError("Error al buscar el producto")
     } finally {
       setLoading(false)
@@ -175,10 +133,6 @@ export default function BarcodeScanner() {
     await searchProduct(manualCode.trim())
   }
 
-  const handleTestCode = async () => {
-    await searchProduct("0123456783")
-  }
-
   const resetScan = () => {
     setScanResult(null)
     setError(null)
@@ -186,161 +140,240 @@ export default function BarcodeScanner() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Búsqueda Manual */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Búsqueda Manual
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-gray-600">Ingresa el código de barras manualmente</p>
-
-          <div className="flex gap-2">
-            <Input
-              placeholder="Escanea o ingresa el código de barras"
-              value={manualCode}
-              onChange={(e) => setManualCode(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleManualSearch()}
-            />
-            <Button onClick={handleManualSearch} disabled={loading || !manualCode.trim()}>
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Escáner con Cámara */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Camera className="h-5 w-5" />
-            Escáner con Cámara
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-gray-600">Usa la cámara para escanear códigos de barras</p>
-
-          {/* Video para la cámara */}
-          <div className="relative">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full max-w-md mx-auto rounded-lg bg-black"
-              style={{ display: isScanning ? "block" : "none" }}
-            />
-
-            {/* Overlay de targeting */}
-            {isScanning && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="border-2 border-red-500 w-64 h-32 rounded-lg"></div>
-              </div>
-            )}
-          </div>
-
-          {/* Controles */}
-          <div className="flex gap-2 justify-center">
-            {!isScanning ? (
-              <Button onClick={startCamera} className="bg-green-600 hover:bg-green-700">
-                <Camera className="h-4 w-4 mr-2" />
-                Iniciar Escáner
-              </Button>
-            ) : (
-              <Button onClick={stopCamera} variant="outline">
-                <XCircle className="h-4 w-4 mr-2" />
-                Detener
-              </Button>
-            )}
-
-            <Button onClick={handleTestCode} variant="outline">
-              Probar Código
-            </Button>
-          </div>
-
-          <p className="text-xs text-center text-gray-500">
-            Apunta la cámara hacia el código de barras. Soporta códigos entrelazados 2 de 5.
+    <div className="space-y-12 max-w-[1200px] mx-auto p-6 md:p-10 animate-in fade-in duration-700">
+      {/* Massive Big UI Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-4">
+        <div>
+          <h1 className="text-7xl md:text-8xl font-black tracking-tighter text-slate-900 leading-[0.8] mb-4">
+            Scanner<span className="text-emerald-500">.</span>
+          </h1>
+          <p className="text-xl font-bold text-slate-400 uppercase tracking-widest italic ml-1">
+            Detección inteligente de inventario
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Resultado del escaneo */}
-      {loading && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2">Buscando producto...</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+        {/* Camera/Input Side */}
+        <div className="space-y-10">
+          {/* Manual Search Section */}
+          <Card className="rounded-[44px] border-none shadow-sm bg-white p-8 space-y-6 border border-slate-50">
+            <div className="flex items-center gap-3 ml-1">
+              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white">
+                <Search className="h-5 w-5" />
+              </div>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Ingreso Manual</p>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            
+            <div className="flex gap-4">
+              <Input
+                placeholder="ESCRIBE O PEGA EL CÓDIGO..."
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleManualSearch()}
+                className="h-20 px-8 rounded-[24px] border-none bg-slate-50 shadow-sm font-black text-xl uppercase tracking-widest placeholder:text-slate-200 focus-visible:ring-4 focus-visible:ring-emerald-500/10 transition-all text-slate-900"
+              />
+              <Button 
+                onClick={handleManualSearch} 
+                className="h-20 w-20 rounded-[24px] bg-slate-900 hover:bg-emerald-500 text-white transition-all active:scale-95"
+                disabled={loading || !manualCode.trim()}
+              >
+                <Search className="h-6 w-6" />
+              </Button>
+            </div>
+          </Card>
 
-      {error && (
-        <Alert className="border-red-200 bg-red-50">
-          <Package className="h-4 w-4 text-red-600" />
-          <AlertDescription>
-            <strong>Producto No Encontrado</strong>
-            <p className="mt-1">{error}</p>
-          </AlertDescription>
-        </Alert>
-      )}
+          {/* Camera Section */}
+          <Card className="rounded-[44px] border-none shadow-sm bg-white overflow-hidden relative group transition-all duration-700 hover:shadow-2xl border border-slate-50">
+            <div className="aspect-[4/3] relative flex items-center justify-center bg-slate-100">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={cn("w-full h-full object-cover transition-opacity duration-1000", isScanning ? "opacity-100" : "opacity-30")}
+              />
 
-      {scanResult && scanResult.product && (
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800">
-              <Package className="h-5 w-5" />
-              Producto Encontrado
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Nombre</p>
-                <p className="font-medium">{scanResult.product.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">SKU</p>
-                <p className="font-mono text-sm">{scanResult.product.sku}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Precio</p>
-                <p className="font-medium text-green-600">${scanResult.product.price.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Stock</p>
-                <Badge variant={scanResult.product.stock_quantity > 0 ? "default" : "destructive"}>
-                  {scanResult.product.stock_quantity} unidades
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Categoría</p>
-                <Badge variant="outline">{scanResult.product.category}</Badge>
-              </div>
-              {scanResult.product.brand && (
-                <div>
-                  <p className="text-sm text-gray-600">Marca</p>
-                  <p className="font-medium">{scanResult.product.brand}</p>
+              {/* Glassmorphic Overlay (Light Mode) */}
+              {isScanning && (
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden z-10">
+                  <div className="absolute inset-0 bg-white/30 backdrop-blur-[1px]"></div>
+                  <div className="relative w-64 h-64 border-4 border-emerald-500/30 rounded-[44px] bg-white/10 backdrop-blur-md flex items-center justify-center animate-pulse">
+                     {/* Corner Brackets */}
+                     <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-emerald-500 rounded-tl-3xl shadow-[0_0_15px_rgba(16,185,129,0.3)]"></div>
+                     <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-emerald-500 rounded-tr-3xl shadow-[0_0_15px_rgba(16,185,129,0.3)]"></div>
+                     <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-emerald-500 rounded-bl-3xl shadow-[0_0_15px_rgba(16,185,129,0.3)]"></div>
+                     <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-emerald-500 rounded-br-3xl shadow-[0_0_15px_rgba(16,185,129,0.3)]"></div>
+                     
+                     {/* Scanning Laser */}
+                     <div className="absolute w-[85%] h-[4px] bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.8)] top-1/2 -translate-y-1/2 animate-[rebound_2s_infinite_ease-in-out]"></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Not Scanning Visual */}
+              {!isScanning && !loading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300 gap-6">
+                  <div className="w-24 h-24 rounded-full bg-slate-50 flex items-center justify-center shadow-inner">
+                    <Camera className="h-10 w-10" />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-[12px] font-black uppercase tracking-[0.3em] text-slate-400">SISTEMA DE VISIÓN</p>
+                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic font-mono">EN ESPERA DE ACTIVACIÓN</p>
+                  </div>
+                </div>
+              )}
+
+              {loading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 backdrop-blur-xl z-20 gap-8">
+                  <div className="relative">
+                    <div className="w-20 h-20 border-4 border-slate-50 border-t-emerald-500 rounded-full animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center animate-pulse">
+                        <Search className="h-5 w-5 text-emerald-500" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-[12px] font-black text-emerald-600 uppercase tracking-[0.3em]">ANALIZANDO SKU</p>
+                    <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest italic animate-pulse">CONECTANDO CON EL SERVIDOR...</p>
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-2 pt-4">
-              <Button onClick={resetScan} variant="outline">
-                Escanear Otro
-              </Button>
-              <Button onClick={() => startCamera()} className="bg-blue-600 hover:bg-blue-700">
-                <Camera className="h-4 w-4 mr-2" />
-                Escanear de Nuevo
+            {/* Camera Controls */}
+            <div className="p-10 bg-white flex justify-center gap-6 border-t border-slate-50">
+              {!isScanning ? (
+                <Button 
+                  onClick={startCamera} 
+                  className="h-20 px-12 rounded-[28px] bg-emerald-500 hover:bg-emerald-600 font-black uppercase tracking-widest text-[12px] shadow-2xl shadow-emerald-500/20 active:scale-95 transition-all text-white border-0"
+                >
+                  <Camera className="h-6 w-6 mr-3" />
+                  Iniciar Escaneo Pro
+                </Button>
+              ) : (
+                <Button 
+                  onClick={stopCamera} 
+                  className="h-20 px-12 rounded-[28px] bg-rose-500 hover:bg-rose-600 font-black uppercase tracking-widest text-[12px] shadow-2xl shadow-rose-500/20 active:scale-95 transition-all text-white border-0"
+                >
+                  <XCircle className="h-6 w-6 mr-3" />
+                  Apagar Cámara
+                </Button>
+              )}
+              <Button 
+                onClick={() => searchProduct("0123456783")} 
+                variant="ghost" 
+                className="h-20 px-10 rounded-[28px] border-2 border-slate-100 text-slate-400 hover:text-slate-900 hover:bg-slate-50 font-black uppercase tracking-widest text-[11px] transition-all"
+              >
+                Prueba Local
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </Card>
+        </div>
+
+        {/* Result Side */}
+        <div className="space-y-10 min-h-64 flex flex-col items-center justify-center relative">
+          {error && (
+            <div className="w-full animate-in slide-in-from-right-10 duration-500">
+              <Alert className="rounded-[44px] border-none bg-rose-50 p-10 flex gap-6 items-start">
+                <div className="w-16 h-16 rounded-2xl bg-rose-500 flex items-center justify-center text-white shadow-xl shadow-rose-500/20 shrink-0">
+                  <XCircle className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-rose-300 uppercase tracking-[0.2em] mb-1">DETECCIÓN FALLIDA</p>
+                  <h3 className="text-3xl font-black text-rose-600 tracking-tighter leading-tight italic uppercase">{error}</h3>
+                  <p className="text-sm font-bold text-rose-400 uppercase tracking-tight italic pt-2">Verifica el código o ingresalo manualmente</p>
+                </div>
+              </Alert>
+            </div>
+          )}
+
+          {scanResult && scanResult.product ? (
+            <div className="w-full space-y-8 animate-in zoom-in-95 fade-in duration-500">
+              <Card className="rounded-[44px] border-none shadow-sm bg-white p-12 space-y-10 border border-slate-50 relative overflow-hidden group">
+                {/* Product Header */}
+                <div className="space-y-4">
+                  <Badge className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest mb-4">DETECCIÓN POSITIVA</Badge>
+                  <h2 className="text-6xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.85] italic uppercase group-hover:text-emerald-500 transition-colors duration-500">
+                    {scanResult.product.name}
+                  </h2>
+                  <p className="text-xl font-bold text-slate-400 uppercase tracking-tighter italic font-mono">{scanResult.product.sku}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6 pt-6">
+                  <div className="bg-slate-50 p-8 rounded-[32px] space-y-2 group/card hover:bg-emerald-500 transition-all duration-500">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] group-hover/card:text-emerald-200">PRECIO ACTUAL</p>
+                    <p className="text-4xl font-black text-slate-900 tracking-tighter italic group-hover/card:text-white transition-colors">
+                      ${scanResult.product.price.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className={cn(
+                    "p-8 rounded-[32px] space-y-2 transition-all duration-500",
+                    scanResult.product.stock_quantity > 0 ? "bg-emerald-50 group/card border border-emerald-100/50" : "bg-rose-50 border border-rose-100/50"
+                  )}>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">STOCK DISPONIBLE</p>
+                    <p className={cn(
+                      "text-4xl font-black tracking-tighter italic",
+                      scanResult.product.stock_quantity > 0 ? "text-emerald-600" : "text-rose-600"
+                    )}>
+                      {scanResult.product.stock_quantity} <span className="text-sm uppercase tracking-widest ml-1 opacity-50 font-black">UNDS</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-4 pt-6">
+                  <div className="flex-1 bg-slate-50 rounded-2xl p-6 flex flex-col gap-1 items-start justify-center">
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">CATEGORÍA</p>
+                    <p className="font-black text-slate-900 uppercase tracking-tighter italic">{scanResult.product.category}</p>
+                  </div>
+                  {scanResult.product.brand && (
+                    <div className="flex-1 bg-slate-50 rounded-2xl p-6 flex flex-col gap-1 items-start justify-center">
+                      <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">MARCA</p>
+                      <p className="font-black text-slate-900 uppercase tracking-tighter italic">{scanResult.product.brand}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Scan Action Buttons */}
+                <div className="flex gap-4 pt-4">
+                  <Button 
+                    onClick={resetScan} 
+                    variant="outline" 
+                    className="flex-1 h-16 rounded-[20px] border-slate-200 font-black text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                  >
+                    Cerrar Resultado
+                  </Button>
+                  <Button 
+                    onClick={() => startCamera()} 
+                    className="flex-1 h-16 rounded-[20px] bg-slate-900 border-none hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-slate-900/10"
+                  >
+                    Escanear Nuevo
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          ) : !error && (
+            <div className="text-center space-y-10 animate-in fade-in duration-1000 max-w-sm">
+              <div className="w-40 h-40 bg-slate-50 rounded-[48px] flex items-center justify-center text-slate-200 mx-auto relative group shadow-inner">
+                <Package className="h-20 w-20 group-hover:scale-110 group-hover:text-emerald-500 transition-all duration-700" />
+                <div className="absolute inset-0 border-4 border-dashed border-slate-100 rounded-[48px] animate-[spin_30s_linear_infinite]"></div>
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-3xl font-black text-slate-300 tracking-tighter italic uppercase leading-tight">Sistema en Espera</h3>
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] max-w-[240px] mx-auto leading-relaxed italic">Inicie el escáner o realice una búsqueda manual para identificar productos</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes rebound {
+          0%, 100% { top: 10%; }
+          50% { top: 90%; }
+        }
+      `}</style>
     </div>
   )
 }

@@ -28,6 +28,7 @@ import {
   EyeOff,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -431,7 +432,7 @@ export default function ProductsManager() {
     const rows: CSVRow[] = []
 
     for (let i = 1; i < lines.length; i++) {
-      const values = []
+      const values: string[] = []
       let current = ""
       let inQuotes = false
 
@@ -451,7 +452,7 @@ export default function ProductsManager() {
       if (values.length === headers.length) {
         const row: CSVRow = {}
         headers.forEach((header, index) => {
-          const value = values[index]?.replace(/"/g, "") || ""
+          const value = (values[index] as string)?.replace(/"/g, "") || ""
           row[header] = value
         })
         rows.push(row)
@@ -933,542 +934,223 @@ export default function ProductsManager() {
   }
 
   return (
-    <div className="space-y-6 p-2 md:p-6">
-      {/* Alerta de stock bajo */}
-      {lowStockProducts.length > 0 && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center text-orange-800">
-              <AlertTriangle className="h-5 w-5 mr-2" />
-              Productos con Stock Bajo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {lowStockProducts.map((product) => (
-                <div key={product.id} className="flex justify-between items-center">
-                  <span className="text-sm">{product.name}</span>
-                  <Badge variant="destructive">
-                    Stock:{" "}
-                    {product.has_variants
-                      ? product.variants?.reduce((sum, v) => sum + v.stock_quantity, 0)
-                      : product.stock_quantity}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Header con filtros y botones */}
-      <div className="space-y-4">
-        <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
-          <div className="flex flex-col sm:flex-row gap-4 flex-1">
-            {/* Búsqueda */}
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Buscar por nombre, marca, código o SKU..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Filtros */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="w-full sm:w-48">
-                <Select
-                  value={selectedCategory || "all"}
-                  onValueChange={(value) => setSelectedCategory(value === "all" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas las categorías" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las categorías</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="w-full sm:w-48">
-                <Select
-                  value={selectedBrand || "all"}
-                  onValueChange={(value) => setBrand(value === "all" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas las marcas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las marcas</SelectItem>
-                    {brands.map((brand) => (
-                      <SelectItem key={brand} value={brand}>
-                        {brand}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {(searchTerm || selectedCategory || selectedBrand) && (
-                <Button variant="outline" onClick={clearFilters} className="whitespace-nowrap bg-transparent">
-                  Limpiar Filtros
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Botones de acción */}
-          <div className="flex flex-wrap gap-2">
-            {/* Botón exportar */}
-            <Button variant="outline" onClick={exportToCSV} className="whitespace-nowrap bg-transparent">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
-
-            {/* Botón importar */}
-            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="whitespace-nowrap bg-transparent">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Importar CSV
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Importar Productos desde CSV</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  {/* Template download */}
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Descargar Plantilla</h4>
-                      <p className="text-sm text-gray-500">
-                        Descarga una plantilla CSV con el formato correcto y ejemplos
-                      </p>
-                    </div>
-                    <Button variant="outline" onClick={downloadTemplate}>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Descargar
-                    </Button>
-                  </div>
-
-                  {/* Instrucciones */}
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="font-medium text-blue-800 mb-2">Formato CSV Simplificado:</h4>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li>
-                        • <strong>Campos obligatorios:</strong> nombre, precio_publico, precio_puesto
-                      </li>
-                      <li>
-                        • <strong>Campos opcionales:</strong> sku, codigo_barras, categoria, marca, descripcion
-                      </li>
-                      <li>
-                        • <strong>Para variantes:</strong> usa "SI" en tiene_variantes y agrega filas de variantes
-                      </li>
-                      <li>
-                        • <strong>Codificación:</strong> Guarda el archivo con codificación UTF-8
-                      </li>
-                      <li>• Solo se actualizarán productos con código de barras o SKU únicos</li>
-                    </ul>
-                  </div>
-
-                  {/* File upload */}
-                  <div className="space-y-2">
-                    <Label htmlFor="csv-file">Seleccionar archivo CSV</Label>
-                    <Input
-                      id="csv-file"
-                      type="file"
-                      accept=".csv"
-                      ref={fileInputRef}
-                      onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                    />
-                  </div>
-
-                  {/* Import progress */}
-                  {isImporting && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Importando...</span>
-                        <span>{Math.round(importProgress)}%</span>
-                      </div>
-                      <Progress value={importProgress} />
-                    </div>
-                  )}
-
-                  {/* Import results */}
-                  {importResult && (
-                    <div className="space-y-2">
-                      <Alert
-                        className={
-                          importResult.errors.length > 0 ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"
-                        }
-                      >
-                        <div className="flex items-center">
-                          {importResult.errors.length > 0 ? (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          ) : (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          )}
-                          <AlertDescription className="ml-2">
-                            {importResult.success > 0 && (
-                              <div className="text-green-700">
-                                ✓ {importResult.success} productos procesados exitosamente
-                              </div>
-                            )}
-                            {importResult.warnings.length > 0 && (
-                              <div className="text-yellow-700 mt-1">
-                                <strong>Detalles:</strong>
-                                <ul className="list-disc list-inside mt-1 max-h-32 overflow-y-auto">
-                                  {importResult.warnings.map((warning, i) => (
-                                    <li key={i} className="text-sm">
-                                      {warning}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {importResult.errors.length > 0 && (
-                              <div className="text-red-700 mt-1">
-                                <strong>Errores:</strong>
-                                <ul className="list-disc list-inside mt-1 max-h-32 overflow-y-auto">
-                                  {importResult.errors.map((error, i) => (
-                                    <li key={i} className="text-sm">
-                                      {error}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </AlertDescription>
-                        </div>
-                      </Alert>
-                    </div>
-                  )}
-
-                  {/* Action buttons */}
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setIsImportDialogOpen(false)
-                        setImportFile(null)
-                        setImportResult(null)
-                        setImportProgress(0)
-                      }}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button onClick={importCSV} disabled={!importFile || isImporting}>
-                      {isImporting ? "Importando..." : "Importar"}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Botón agregar producto */}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm} className="whitespace-nowrap">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Producto
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingProduct ? "Editar Producto" : "Agregar Producto"}</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Nombre *</Label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="sku">SKU</Label>
-                      <Input
-                        id="sku"
-                        value={formData.sku}
-                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                        placeholder="Código único del producto"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="barcode">Código de Barras</Label>
-                      <Input
-                        id="barcode"
-                        value={formData.barcode}
-                        onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="public_price">Precio Público *</Label>
-                      <Input
-                        id="public_price"
-                        type="number"
-                        step="0.01"
-                        value={formData.public_price}
-                        onChange={(e) => setFormData({ ...formData, public_price: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="wholesale_price">Precio Puesto *</Label>
-                      <Input
-                        id="wholesale_price"
-                        type="number"
-                        step="0.01"
-                        value={formData.wholesale_price}
-                        onChange={(e) => setFormData({ ...formData, wholesale_price: e.target.value })}
-                        required
-                      />
-                    </div>
-
-                    {/* Categoría mejorada */}
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Categoría</Label>
-                      {!isAddingNewCategory ? (
-                        <div className="flex gap-2">
-                          <Select
-                            value={formData.category}
-                            onValueChange={(value) => {
-                              if (value === "add_new") {
-                                setIsAddingNewCategory(true)
-                              } else {
-                                setFormData({ ...formData, category: value })
-                              }
-                            }}
-                          >
-                            <SelectTrigger className="flex-1">
-                              <SelectValue placeholder="Seleccionar categoría" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {categories.map((category) => (
-                                <SelectItem key={category} value={category}>
-                                  {category}
-                                </SelectItem>
-                              ))}
-                              <SelectItem value="add_new" className="text-blue-600 font-medium">
-                                + Agregar nueva categoría
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Nombre de la nueva categoría"
-                            value={newCategoryName}
-                            onChange={(e) => setNewCategoryName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault()
-                                handleAddNewCategory()
-                              }
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            onClick={handleAddNewCategory}
-                            disabled={!newCategoryName.trim()}
-                            size="sm"
-                          >
-                            Agregar
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setIsAddingNewCategory(false)
-                              setNewCategoryName("")
-                            }}
-                            size="sm"
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="brand">Marca</Label>
-                      <Input
-                        id="brand"
-                        value={formData.brand}
-                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                      />
-                    </div>
-
-                    {/* Switch para variantes */}
-                    <div className="col-span-2 space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="has_variants"
-                          checked={formData.has_variants}
-                          onCheckedChange={(checked) => setFormData({ ...formData, has_variants: checked })}
-                        />
-                        <Label htmlFor="has_variants">Este producto tiene variantes</Label>
-                      </div>
-                      <p className="text-sm text-gray-500">
-                        Si activas esta opción, podrás crear variantes del producto (tallas, colores, etc.)
-                      </p>
-                    </div>
-
-                    {!formData.has_variants && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="stock_quantity">Cantidad en Stock *</Label>
-                          <Input
-                            id="stock_quantity"
-                            type="number"
-                            value={formData.stock_quantity}
-                            onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="min_stock">Stock Mínimo *</Label>
-                          <Input
-                            id="min_stock"
-                            type="number"
-                            value={formData.min_stock}
-                            onChange={(e) => setFormData({ ...formData, min_stock: e.target.value })}
-                            required
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descripción</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit">{editingProduct ? "Actualizar" : "Guardar"}</Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+    <div className="space-y-10 p-6 lg:p-12 bg-[#f8fafc] min-h-full transition-all duration-500 animate-in fade-in slide-in-from-bottom-4">
+      {/* Título de la página */}
+      <div className="mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-7xl font-black text-slate-900 tracking-tighter leading-none mb-4">
+            Productos<span className="text-[#10b981]">.</span>
+          </h1>
+          <p className="text-xl font-bold text-slate-400 max-w-2xl">
+            Gestiona tu catálogo maestro, controla inventarios y organiza variantes de productos en un solo lugar.
+          </p>
         </div>
-
-        {/* Contador de resultados */}
-        <div className="flex justify-between items-center text-sm text-gray-600">
-          <span>
-            Mostrando {filteredProducts.length} de {products.length} productos
-            {selectedCategory && ` • Categoría: ${selectedCategory}`}
-            {selectedBrand && ` • Marca: ${selectedBrand}`}
-          </span>
+        <div className="hidden lg:flex gap-4">
+          <div className="p-6 bg-white rounded-[32px] shadow-sm border border-slate-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+              <Package className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Catálogo</p>
+              <p className="text-2xl font-black text-slate-900 leading-none">{products.length}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Tabla de productos */}
-      <Card>
+      {/* Alerta de stock bajo */}
+      {lowStockProducts.length > 0 && (
+        <Alert className="border-none bg-rose-50 rounded-[32px] p-8 shadow-sm">
+          <div className="flex items-start gap-6">
+            <div className="p-4 bg-white rounded-2xl shadow-sm">
+              <AlertTriangle className="h-8 w-8 text-rose-500" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-xl font-black text-rose-900 uppercase tracking-tight mb-2">Alerta de Inventario</h4>
+              <p className="text-rose-700 font-bold mb-4 opacity-80">
+                Tienes {lowStockProducts.length} productos que requieren atención inmediata por stock crítico.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {lowStockProducts.slice(0, 5).map((product) => (
+                  <Badge key={product.id} variant="outline" className="bg-white/50 border-rose-200 text-rose-700 font-black px-4 py-1.5 rounded-xl">
+                    {product.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      {/* Contenedor de Filtros */}
+      <div className="flex flex-col lg:flex-row gap-6 items-stretch lg:items-center bg-white p-8 rounded-[40px] shadow-sm border border-slate-50">
+        <div className="relative flex-1">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 h-6 w-6" />
+          <Input
+            placeholder="Buscar por nombre, SKU o código..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-16 h-16 bg-slate-50 border-none rounded-[24px] text-lg font-bold placeholder:text-slate-300 focus-visible:ring-2 focus-visible:ring-emerald-500/10 w-full"
+          />
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
+          <Select value={selectedCategory || "all"} onValueChange={(v) => setSelectedCategory(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-full sm:w-64 h-16 bg-slate-50 border-none rounded-[24px] font-bold text-slate-600 px-6">
+              <SelectValue placeholder="Categoría" />
+            </SelectTrigger>
+            <SelectContent className="rounded-3xl border-none shadow-2xl p-2">
+              <SelectItem value="all">Todas las categorías</SelectItem>
+              {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={exportToCSV} className="h-16 rounded-[24px] border-none bg-emerald-50 text-emerald-600 font-bold hover:bg-emerald-100 px-6 transition-all">
+              <Download className="h-6 w-6 sm:mr-2" />
+              <span className="hidden sm:inline">Exportar</span>
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(true)} className="h-16 rounded-[24px] border-none bg-slate-50 text-slate-500 font-bold hover:bg-slate-100 px-6 transition-all">
+              <Upload className="h-6 w-6 sm:mr-2" />
+              <span className="hidden sm:inline">Importar</span>
+            </Button>
+          </div>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm} className="h-16 rounded-[28px] bg-[#10b981] hover:bg-[#059669] text-white font-black text-lg uppercase tracking-[0.2em] shadow-xl shadow-emerald-200 px-10 transition-all active:scale-95">
+                <Plus className="h-6 w-6 mr-2" />
+                Nuevo Producto
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl rounded-[44px] border-none shadow-2xl p-10 max-h-[90vh] overflow-y-auto">
+              <DialogHeader className="mb-8">
+                <DialogTitle className="text-5xl font-black text-slate-900 tracking-tighter">
+                  {editingProduct ? "Editar" : "Nuevo"} <span className="text-emerald-500">Producto.</span>
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Nombre Comercial *</Label>
+                    <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl text-lg font-bold" required />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">SKU / Referencia</Label>
+                    <Input value={formData.sku} onChange={(e) => setFormData({...formData, sku: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl text-lg font-bold uppercase" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Código de Barras</Label>
+                    <Input value={formData.barcode} onChange={(e) => setFormData({...formData, barcode: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl font-mono text-lg" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Marca</Label>
+                    <Input value={formData.brand} onChange={(e) => setFormData({...formData, brand: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl text-lg font-bold" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Categoría</Label>
+                    {!isAddingNewCategory ? (
+                      <Select value={formData.category} onValueChange={(v) => v === "add_new" ? setIsAddingNewCategory(true) : setFormData({...formData, category: v})}>
+                        <SelectTrigger className="h-14 bg-slate-50 border-none rounded-2xl font-bold px-6">
+                          <SelectValue placeholder="Seleccionar..." />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-none shadow-xl">
+                          {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          <SelectItem value="add_new" className="text-emerald-600 font-black">+ NUEVA...</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex gap-2">
+                         <Input placeholder="Nueva categoría..." value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} className="h-14 bg-slate-50 border-none rounded-2xl font-bold" />
+                         <Button type="button" onClick={handleAddNewCategory} className="h-14 w-14 rounded-2xl bg-emerald-500"><Plus className="h-6 w-6" /></Button>
+                         <Button type="button" variant="ghost" onClick={() => setIsAddingNewCategory(false)} className="h-14 w-14 rounded-2xl text-rose-500"><XCircle className="h-6 w-6" /></Button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Precio Venta *</Label>
+                      <Input type="number" step="0.01" value={formData.public_price} onChange={(e) => setFormData({...formData, public_price: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl text-xl font-black text-emerald-600" required />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Precio Costo *</Label>
+                      <Input type="number" step="0.01" value={formData.wholesale_price} onChange={(e) => setFormData({...formData, wholesale_price: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl text-xl font-black text-blue-600" required />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-8 bg-slate-50 rounded-[32px] space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">Gestión por Variantes</h4>
+                      <p className="text-sm text-slate-400 font-medium">Habilitar múltiples presentaciones (talla, color, etc.)</p>
+                    </div>
+                    <Switch checked={formData.has_variants} onCheckedChange={(v) => setFormData({...formData, has_variants: v})} className="scale-125 data-[state=checked]:bg-emerald-500" />
+                  </div>
+                  {!formData.has_variants && (
+                    <div className="grid grid-cols-2 gap-6 pt-6 border-t border-slate-100">
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase">Stock Actual</Label><Input type="number" value={formData.stock_quantity} onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})} className="h-14 bg-white border-none rounded-2xl text-lg font-black" required /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase">Mínimo Crítico</Label><Input type="number" value={formData.min_stock} onChange={(e) => setFormData({...formData, min_stock: e.target.value})} className="h-14 bg-white border-none rounded-2xl text-lg font-black" required /></div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Descripción Destacada</Label>
+                  <Textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="bg-slate-50 border-none rounded-3xl p-6 text-base font-medium resize-none min-h-[120px]" />
+                </div>
+
+                <div className="flex justify-end gap-4 pt-6"><Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="h-16 px-10 rounded-3xl font-black uppercase tracking-widest text-slate-400">Descartar</Button><Button type="submit" className="h-16 px-12 rounded-3xl bg-slate-900 hover:bg-black text-white font-black uppercase tracking-widest shadow-xl transition-all active:scale-95">{editingProduct ? "Actualizar" : "Registrar"} Producto</Button></div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2">
+        <span>Catálogo Maestro de Inventario</span>
+        <span>Resultados: {filteredProducts.length} Ítems</span>
+      </div>
+
+      {/* Tabla de productos (Rediseñada) */}
+      <Card className="border-none shadow-sm rounded-[44px] overflow-hidden bg-white p-4">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead className="hidden sm:table-cell">SKU</TableHead>
-                  <TableHead className="hidden sm:table-cell">Marca</TableHead>
-                  <TableHead className="hidden md:table-cell">Categoría</TableHead>
-                  <TableHead>Precio Público</TableHead>
-                  <TableHead className="hidden lg:table-cell">Precio Puesto</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                <TableRow className="border-slate-50 hover:bg-transparent">
+                  <TableHead className="h-16 px-8 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Producto</TableHead>
+                  <TableHead className="h-16 hidden sm:table-cell text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Referencia / Marca</TableHead>
+                  <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">P. Venta</TableHead>
+                  <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Stock</TableHead>
+                  <TableHead className="h-16 text-right px-8 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium flex items-center gap-2">
-                          {product.name}
-                          {product.has_variants && (
-                            <Badge variant="outline" className="text-xs">
-                              <Package className="h-3 w-3 mr-1" />
-                              Variantes
-                            </Badge>
-                          )}
-                          {product.is_active === false && (
-                            <Badge variant="secondary" className="text-xs">
-                              <EyeOff className="h-3 w-3 mr-1" />
-                              Inactivo
-                            </Badge>
-                          )}
-                        </div>
-                        {product.barcode && <div className="text-sm text-gray-500">{product.barcode}</div>}
+                  <TableRow key={product.id} className="group border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <TableCell className="px-8 py-8">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-black text-slate-900 group-hover:text-emerald-500 transition-colors">{product.name}</span>
+                        {product.has_variants && <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[10px] px-2 py-0.5 rounded-lg">VARIANTES</Badge>}
                       </div>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <span className="font-mono text-sm">{product.sku || "-"}</span>
+                    <TableCell className="hidden sm:table-cell py-8 font-mono text-sm font-black text-slate-400 uppercase">{product.sku || "S/SKU"} • {product.brand || "GENÉRICO"}</TableCell>
+                    <TableCell className="py-8"><span className="text-2xl font-black text-slate-900 tracking-tighter italic">${(product.public_price || 0).toFixed(2)}</span></TableCell>
+                    <TableCell className="py-8">
+                      <div className={cn(
+                        "inline-flex flex-col items-center justify-center min-w-[72px] h-[72px] rounded-[24px]",
+                        (product.has_variants ? product.variants?.some(v => v.stock_quantity <= v.min_stock) : product.stock_quantity <= product.min_stock) ? "bg-rose-50 text-rose-600 shadow-sm" : "bg-emerald-50 text-emerald-600"
+                      )}>
+                        <span className="text-2xl font-black">{product.has_variants ? product.variants?.reduce((s, v) => s + v.stock_quantity, 0) : product.stock_quantity}</span>
+                        <span className="text-[9px] font-black uppercase opacity-60">uds</span>
+                      </div>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{product.brand}</TableCell>
-                    <TableCell className="hidden md:table-cell">{product.category}</TableCell>
-                    <TableCell>${(product.public_price || product.price || 0).toFixed(2)}</TableCell>
-                    <TableCell className="hidden lg:table-cell">${(product.wholesale_price || 0).toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          (
-                            product.has_variants
-                              ? product.variants?.some((v) => v.stock_quantity <= v.min_stock)
-                              : product.stock_quantity <= product.min_stock
-                          )
-                            ? "destructive"
-                            : "secondary"
-                        }
-                      >
-                        {product.has_variants
-                          ? product.variants?.reduce((sum, v) => sum + v.stock_quantity, 0) || 0
-                          : product.stock_quantity}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        {product.has_variants && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleManageVariants(product)}
-                            title="Gestionar variantes"
-                          >
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(product.id, product.name)}
-                          title="Eliminar producto"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                    <TableCell className="text-right px-8 py-8">
+                      <div className="flex justify-end gap-3 text-slate-300">
+                        {product.has_variants && <Button variant="ghost" size="icon" onClick={() => handleManageVariants(product)} className="h-12 w-12 rounded-2xl hover:bg-white hover:text-emerald-500 hover:shadow-sm"><Settings className="h-6 w-6" /></Button>}
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(product)} className="h-12 w-12 rounded-2xl hover:bg-white hover:text-blue-500 hover:shadow-sm"><Edit className="h-6 w-6" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id, product.name)} className="h-12 w-12 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors"><Trash2 className="h-6 w-6" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -1479,145 +1161,95 @@ export default function ProductsManager() {
         </CardContent>
       </Card>
 
-      {/* Diálogo para gestionar variantes */}
-      <Dialog open={isVariantsDialogOpen} onOpenChange={setIsVariantsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Gestionar Variantes - {selectedProductForVariants?.name}</DialogTitle>
+      {/* Diálogo de Importación */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="max-w-2xl rounded-[40px] border-none shadow-2xl p-10">
+          <DialogHeader className="mb-8">
+            <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter">Carga <span className="text-blue-500">Masiva.</span></DialogTitle>
           </DialogHeader>
+          <div className="space-y-6">
+            <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 flex items-center justify-between">
+              <div>
+                <h4 className="text-lg font-black text-slate-900">Plantilla Oficial</h4>
+                <p className="text-sm text-slate-400 font-medium">Usa este formato para evitar errores de carga.</p>
+              </div>
+              <Button onClick={downloadTemplate} className="h-14 rounded-2xl bg-white border-none shadow-sm font-black text-xs uppercase tracking-widest px-8">Descargar</Button>
+            </div>
 
-          <Tabs defaultValue="variants" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="variants">Variantes</TabsTrigger>
-              <TabsTrigger value="add">Agregar Variante</TabsTrigger>
+            <div className="space-y-3">
+              <Label className="ml-1 text-[11px] font-black uppercase tracking-widest text-slate-400">Archivo CSV</Label>
+              <Input
+                type="file"
+                accept=".csv"
+                ref={fileInputRef}
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                className="h-20 bg-slate-50 border-none rounded-[24px] text-sm font-bold file:h-12 file:bg-emerald-500 file:text-white file:border-none file:rounded-xl file:px-6 file:mr-6 file:font-black file:uppercase file:text-[10px] file:tracking-widest"
+              />
+            </div>
+
+            {isImporting && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  <span>Procesando Datos...</span>
+                  <span>{Math.round(importProgress)}%</span>
+                </div>
+                <Progress value={importProgress} className="h-3 bg-slate-100 rounded-full" />
+              </div>
+            )}
+
+            {importResult && (
+              <Alert className={cn("rounded-3xl border-none p-6 shadow-sm", importResult.errors.length > 0 ? "bg-rose-50" : "bg-emerald-50")}>
+                <div className="flex gap-4">
+                  {importResult.errors.length > 0 ? <XCircle className="h-6 w-6 text-rose-500" /> : <CheckCircle className="h-6 w-6 text-emerald-500" />}
+                  <div className="text-sm font-bold">
+                    {importResult.success > 0 && <p className="text-emerald-700">✓ {importResult.success} productos importados con éxito.</p>}
+                    {importResult.errors.length > 0 && (
+                      <div className="text-rose-700 mt-2">
+                        <p className="mb-2">Se detectaron {importResult.errors.length} problemas:</p>
+                        <ul className="list-disc list-inside space-y-1 opacity-70 max-h-40 overflow-y-auto">
+                          {importResult.errors.map((error, i) => <li key={i}>{error}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Alert>
+            )}
+
+            <div className="flex justify-end gap-3 pt-6"><Button variant="ghost" onClick={() => setIsImportDialogOpen(false)} className="h-14 rounded-2xl font-black uppercase tracking-widest text-slate-400">Cancelar</Button><Button onClick={importCSV} disabled={!importFile || isImporting} className="h-14 px-10 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest">Cruzar Datos</Button></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Variantes */}
+      <Dialog open={isVariantsDialogOpen} onOpenChange={setIsVariantsDialogOpen}>
+        <DialogContent className="max-w-4xl rounded-[44px] border-none shadow-2xl p-10 max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="mb-6"><DialogTitle className="text-4xl font-black">Variantes : {selectedProductForVariants?.name}.</DialogTitle></DialogHeader>
+          <Tabs defaultValue="list" className="space-y-8">
+            <TabsList className="bg-slate-100 p-1.5 rounded-2xl h-16 w-full">
+              <TabsTrigger value="list" className="flex-1 rounded-xl font-black text-sm uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">Listado Maestro</TabsTrigger>
+              <TabsTrigger value="add" className="flex-1 rounded-xl font-black text-sm uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">Nueva Variante</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="variants" className="space-y-4">
-              {variants.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>SKU</TableHead>
-                        <TableHead>Código de Barras</TableHead>
-                        <TableHead>Precio Público</TableHead>
-                        <TableHead>Precio Puesto</TableHead>
-                        <TableHead>Stock</TableHead>
-                        <TableHead>Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {variants.map((variant) => (
-                        <TableRow key={variant.id}>
-                          <TableCell>{variant.name}</TableCell>
-                          <TableCell>
-                            <span className="font-mono text-sm">{variant.sku || "-"}</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-mono text-sm">{variant.barcode || "-"}</span>
-                          </TableCell>
-                          <TableCell>${variant.public_price.toFixed(2)}</TableCell>
-                          <TableCell>${variant.wholesale_price.toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Badge variant={variant.stock_quantity <= variant.min_stock ? "destructive" : "secondary"}>
-                              {variant.stock_quantity}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteVariant(variant.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">No hay variantes creadas para este producto</div>
-              )}
+            <TabsContent value="list" className="pt-4">
+              <Table>
+                <TableHeader><TableRow className="border-slate-100 hover:bg-transparent"><TableHead className="font-black text-[11px] uppercase tracking-widest">Atributo / Variante</TableHead><TableHead className="font-black text-[11px] uppercase tracking-widest">Stock</TableHead><TableHead className="text-right font-black text-[11px] uppercase tracking-widest">Acciones</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {variants.map(v => (
+                    <TableRow key={v.id} className="border-slate-50">
+                      <TableCell className="py-6 font-black text-slate-800 text-lg">{v.name}</TableCell>
+                      <TableCell className="py-6"><Badge variant={v.stock_quantity <= v.min_stock ? "destructive" : "secondary"} className="h-10 px-4 rounded-xl font-black text-base">{v.stock_quantity}</Badge></TableCell>
+                      <TableCell className="py-6 text-right"><Button variant="ghost" size="icon" onClick={() => handleDeleteVariant(v.id)} className="h-12 w-12 rounded-2xl text-rose-500 hover:bg-rose-50"><Trash2 className="h-5 w-5" /></Button></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </TabsContent>
-
-            <TabsContent value="add" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="variant_name">Nombre de la Variante *</Label>
-                  <Input
-                    id="variant_name"
-                    placeholder="Ej: Talla M, Color Rojo"
-                    value={newVariant.name}
-                    onChange={(e) => setNewVariant({ ...newVariant, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="variant_sku">SKU</Label>
-                  <Input
-                    id="variant_sku"
-                    placeholder="Código único"
-                    value={newVariant.sku}
-                    onChange={(e) => setNewVariant({ ...newVariant, sku: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="variant_barcode">Código de Barras</Label>
-                  <Input
-                    id="variant_barcode"
-                    value={newVariant.barcode}
-                    onChange={(e) => setNewVariant({ ...newVariant, barcode: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="variant_public_price">Precio Público *</Label>
-                  <Input
-                    id="variant_public_price"
-                    type="number"
-                    step="0.01"
-                    value={newVariant.public_price}
-                    onChange={(e) => setNewVariant({ ...newVariant, public_price: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="variant_wholesale_price">Precio Puesto *</Label>
-                  <Input
-                    id="variant_wholesale_price"
-                    type="number"
-                    step="0.01"
-                    value={newVariant.wholesale_price}
-                    onChange={(e) => setNewVariant({ ...newVariant, wholesale_price: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="variant_stock">Stock Inicial *</Label>
-                  <Input
-                    id="variant_stock"
-                    type="number"
-                    value={newVariant.stock_quantity}
-                    onChange={(e) => setNewVariant({ ...newVariant, stock_quantity: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="variant_min_stock">Stock Mínimo *</Label>
-                  <Input
-                    id="variant_min_stock"
-                    type="number"
-                    value={newVariant.min_stock}
-                    onChange={(e) => setNewVariant({ ...newVariant, min_stock: e.target.value })}
-                  />
-                </div>
+            <TabsContent value="add" className="space-y-8 pt-4">
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-3"><Label className="ml-1 text-[11px] font-black uppercase text-slate-400">Identificador</Label><Input value={newVariant.name} onChange={(e) => setNewVariant({...newVariant, name: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl text-lg font-bold" placeholder="Ej: Verde / XL" /></div>
+                <div className="space-y-3"><Label className="ml-1 text-[11px] font-black uppercase text-slate-400">Stock Inicial</Label><Input type="number" value={newVariant.stock_quantity} onChange={(e) => setNewVariant({...newVariant, stock_quantity: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl text-xl font-black" /></div>
               </div>
-
-              <div className="flex justify-end">
-                <Button onClick={handleAddVariant} disabled={!newVariant.name}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Variante
-                </Button>
-              </div>
+              <Button onClick={handleAddVariant} className="w-full h-16 rounded-[24px] bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-lg shadow-xl shadow-emerald-100 transition-all active:scale-95">Inyectar Variante</Button>
             </TabsContent>
           </Tabs>
         </DialogContent>

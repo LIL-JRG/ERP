@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import CashCut from "@/components/cash/cash-cut"
+import { cn } from "@/lib/utils"
 
 interface ProductVariant {
   id: string
@@ -602,448 +603,597 @@ export default function SalesManager() {
   }
 
   return (
-    <div className="space-y-4 p-2 md:p-6">
-      {/* Botón de Corte de Caja */}
-      <div className="flex justify-end mb-2">
+    <div className="space-y-12 p-6 md:p-10 max-w-[1600px] mx-auto animate-in fade-in duration-700">
+      {/* Massive Big UI Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-4">
+        <div>
+          <h1 className="text-7xl md:text-8xl font-black tracking-tighter text-slate-900 leading-[0.8] mb-4">
+            Ventas<span className="text-emerald-500">.</span>
+          </h1>
+          <p className="text-xl font-bold text-slate-400 uppercase tracking-widest italic ml-1">
+            Gestión de Transacciones y Flujo de Caja
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <CashCut />
+        </div>
       </div>
-      <Tabs defaultValue="sales" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="sales">Ventas</TabsTrigger>
-          <TabsTrigger value="new">Nueva Venta</TabsTrigger>
+
+      {/* Premium Sales Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="rounded-[32px] border-none shadow-sm bg-white p-8 group hover:shadow-xl transition-all duration-500">
+          <div className="flex justify-between items-start mb-6">
+            <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+              <DollarSign className="h-7 w-7" />
+            </div>
+            <Badge className="bg-emerald-50 text-emerald-600 border-none font-black px-3 py-1 rounded-full uppercase text-[10px] tracking-widest italic">Facturación</Badge>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Total Ventas</p>
+            <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic">
+              {formatCurrency(sales.reduce((acc, s) => acc + (s.status === 'completada' ? s.total : 0), 0))}
+            </h3>
+          </div>
+        </Card>
+
+        <Card className="rounded-[32px] border-none shadow-sm bg-white p-8 group hover:shadow-xl transition-all duration-500">
+          <div className="flex justify-between items-start mb-6">
+            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+              <ShoppingCart className="h-7 w-7" />
+            </div>
+            <Badge className="bg-blue-50 text-blue-600 border-none font-black px-3 py-1 rounded-full uppercase text-[10px] tracking-widest italic">Volume</Badge>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Operaciones Totales</p>
+            <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic">
+              {sales.filter(s => s.status === 'completada').length} <span className="text-lg text-slate-300">items</span>
+            </h3>
+          </div>
+        </Card>
+
+        <Card className="rounded-[32px] border-none shadow-sm bg-white p-8 group hover:shadow-xl transition-all duration-500">
+          <div className="flex justify-between items-start mb-6">
+            <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+              <CreditCard className="h-7 w-7" />
+            </div>
+            <Badge className="bg-orange-50 text-orange-600 border-none font-black px-3 py-1 rounded-full uppercase text-[10px] tracking-widest italic">Creditos</Badge>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Ventas a Credito</p>
+            <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic">
+              {sales.filter(s => s.sale_type === 'credito').length} <span className="text-lg text-slate-300">pend.</span>
+            </h3>
+          </div>
+        </Card>
+
+        <Card className="rounded-[32px] border-none shadow-sm bg-white p-8 group hover:shadow-xl transition-all duration-500">
+          <div className="flex justify-between items-start mb-6">
+            <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform">
+              <X className="h-7 w-7" />
+            </div>
+            <Badge className="bg-rose-50 text-rose-600 border-none font-black px-3 py-1 rounded-full uppercase text-[10px] tracking-widest italic">Cancelaciones</Badge>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Ventas Canceladas</p>
+            <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic">
+              {sales.filter(s => s.status === 'cancelada').length} <span className="text-lg text-slate-300">bajas</span>
+            </h3>
+          </div>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="sales" className="space-y-8">
+        <TabsList className="bg-white p-2 rounded-[32px] h-20 border border-slate-100 shadow-sm inline-flex">
+          <TabsTrigger value="sales" className="rounded-2xl px-10 data-[state=active]:bg-slate-900 data-[state=active]:text-white font-black uppercase tracking-widest text-xs h-full transition-all">
+            Historial de Ventas
+          </TabsTrigger>
+          <TabsTrigger value="new" className="rounded-2xl px-10 data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-black uppercase tracking-widest text-xs h-full transition-all">
+            Nueva Transaccion
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="sales" className="space-y-4">
-          {/* Header con búsqueda */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <TabsContent value="sales" className="space-y-8 animate-in slide-in-from-left-4 duration-500">
+          {/* Header Búsqueda con Estilo Masivo */}
+          <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+            <div className="relative w-full md:w-[400px] group">
+              <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
+                <Search className="h-6 w-6 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+              </div>
               <Input
-                placeholder="Buscar ventas..."
+                placeholder="BUSCAR VENTA POR FOLIO O CLIENTE..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="h-16 pl-16 rounded-[24px] border-none bg-white shadow-sm font-black text-sm uppercase tracking-widest placeholder:text-slate-300 focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
               />
             </div>
-            {/* Corte de caja */}
-            <CashCut />
-
           </div>
 
-          {/* Tabla de ventas */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
+          {/* Tabla de Ventas Big UI */}
+          <div className="bg-white rounded-[44px] shadow-sm overflow-hidden p-4 border border-slate-50">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-slate-50 hover:bg-transparent">
+                    <TableHead className="h-20 px-8 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">IDENTIFICADOR</TableHead>
+                    <TableHead className="h-20 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden md:table-cell">DETALLE TEMPORAL</TableHead>
+                    <TableHead className="h-20 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">TITULAR / CLIENTE</TableHead>
+                    <TableHead className="h-20 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">VALOR TOTAL</TableHead>
+                    <TableHead className="h-20 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden sm:table-cell">SISTEMA PAGO</TableHead>
+                    <TableHead className="h-20 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">STATUS</TableHead>
+                    <TableHead className="h-20 px-8 text-right text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">ACCIONES</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
                     <TableRow>
-                      <TableHead>Venta #</TableHead>
-                      <TableHead className="hidden md:table-cell">Fecha</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead className="hidden sm:table-cell">Método</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
+                      <TableCell colSpan={7} className="text-center py-20">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                          <p className="text-xl font-black text-slate-400 tracking-tighter uppercase">Sincronizando Ventas...</p>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-4">
-                          Cargando ventas...
-                        </TableCell>
-                      </TableRow>
-                    ) : filteredSales.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-4">
-                          No se encontraron ventas
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredSales.map((sale) => (
-                        <TableRow key={sale.id}>
-                          <TableCell>
-                            <div className="font-medium">{sale.sale_number}</div>
+                  ) : filteredSales.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-20">
+                        <p className="text-2xl font-black text-slate-300 tracking-tighter uppercase italic">Sin registros en este periodo.</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredSales.map((sale) => (
+                      <TableRow key={sale.id} className="group border-slate-50 hover:bg-slate-50/50 transition-colors">
+                        <TableCell className="px-8 py-8">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-2xl font-black text-slate-900 tracking-tighter italic">#{sale.sale_number}</span>
                             {sale.sale_type === "credito" && (
-                              <Badge variant="outline" className="text-xs">
-                                Crédito
+                              <Badge className="bg-orange-50 text-orange-600 border-none font-black px-3 py-1 rounded-lg uppercase text-[9px] tracking-[0.2em] w-fit italic">
+                                CREDITO ACTIVO
                               </Badge>
                             )}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">{formatDate(sale.created_at)}</TableCell>
-                          <TableCell>
-                            <div className="truncate max-w-32">{sale.customer_name || "Cliente General"}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-8 hidden md:table-cell font-bold text-slate-400 uppercase text-xs tracking-widest italic">
+                          {formatDate(sale.created_at)}
+                        </TableCell>
+                        <TableCell className="py-8">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-lg font-black text-slate-900 uppercase tracking-tight">{sale.customer_name || "CLIENTE GENERAL"}</span>
                             {sale.customer?.discount_percentage && sale.customer.discount_percentage > 0 && (
-                              <Badge className="bg-green-100 text-green-800 mt-1 text-xs">
-                                {sale.customer.discount_percentage}% desc.
-                              </Badge>
+                              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest italic">BENEFICIO {sale.customer.discount_percentage}% OFF</span>
                             )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">{formatCurrency(sale.total)}</div>
-                            <div className="text-xs text-gray-500">
-                              {sale.items.length} {sale.items.length === 1 ? "item" : "items"}
-                            </div>
-                            {sale.change_amount > 0 && (
-                              <div className="text-xs text-blue-500">Cambio: {formatCurrency(sale.change_amount)}</div>
-                            )}
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            {getPaymentMethodText(sale.payment_method)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={sale.status === "completada" ? "default" : "secondary"}>
-                              {sale.status === "completada" ? "Completada" : "Cancelada"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button variant="ghost" size="sm" onClick={() => handleViewSale(sale)}>
-                                <Printer className="h-4 w-4" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-8">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-3xl font-black text-slate-900 tracking-tighter italic">{formatCurrency(sale.total)}</span>
+                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{sale.items.length} ITEMS REGISTRADOS</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-8 hidden sm:table-cell">
+                          <div className="flex items-center gap-2">
+                             <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                             <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{getPaymentMethodText(sale.payment_method)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-8">
+                          <Badge className={cn(
+                            "font-black px-4 py-2 rounded-xl uppercase text-[10px] tracking-widest italic border-none shadow-sm",
+                            sale.status === "completada" 
+                              ? "bg-emerald-50 text-emerald-600" 
+                              : "bg-rose-50 text-rose-600"
+                          )}>
+                            {sale.status === "completada" ? "Venta Liquidada" : "Venta Cancelada"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="px-8 py-8 text-right">
+                          <div className="flex justify-end gap-3">
+                            <Button 
+                              variant="ghost" 
+                              onClick={() => handleViewSale(sale)}
+                              className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 hover:bg-slate-900 hover:text-white transition-all p-0"
+                            >
+                              <Printer className="h-5 w-5" />
+                            </Button>
+                            {sale.status === "completada" && (
+                              <Button
+                                variant="ghost"
+                                onClick={() => handleCancelSale(sale)}
+                                className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all p-0"
+                              >
+                                <X className="h-5 w-5" />
                               </Button>
-                              {sale.status === "completada" && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleCancelSale(sale)}
-                                  className="text-red-600"
-                                  title="Cancelar venta"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         </TabsContent>
 
-        <TabsContent value="new" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Nueva Venta</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Selección de cliente */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Cliente</h3>
-                <CustomerSelector onCustomerSelect={setSelectedCustomer} selectedCustomer={selectedCustomer} />
-              </div>
-
-              {/* Tipo de venta */}
-              {selectedCustomer && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Tipo de Venta</h3>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={saleType === "contado" ? "default" : "outline"}
-                      onClick={() => setSaleType("contado")}
-                      size="sm"
-                    >
-                      Contado
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={saleType === "credito" ? "default" : "outline"}
-                      onClick={() => setSaleType("credito")}
-                      size="sm"
-                    >
-                      <CreditCard className="h-4 w-4 mr-1" />
-                      Crédito
-                    </Button>
-                  </div>
+        <TabsContent value="new" className="animate-in slide-in-from-right-4 duration-500">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 items-start">
+            {/* Main Form Area */}
+            <div className="xl:col-span-2 space-y-10">
+              <Card className="rounded-[44px] border-none shadow-sm bg-white p-10">
+                <div className="mb-10">
+                  <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic">Nueva Operacion.</h3>
+                  <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Configuracion de Venta en Tiempo Real</p>
                 </div>
-              )}
 
-              {/* Configuración de crédito */}
-              {saleType === "credito" && selectedCustomer && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-md bg-blue-50">
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Fecha de Vencimiento</h4>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        type="date"
-                        value={creditDueDate}
-                        onChange={(e) => setCreditDueDate(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Notas del Crédito</h4>
-                    <Textarea
-                      value={creditNotes}
-                      onChange={(e) => setCreditNotes(e.target.value)}
-                      placeholder="Notas adicionales..."
-                      rows={2}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Selección de productos */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Productos</h3>
-                <ProductSelector
-                  onProductSelect={handleAddProduct}
-                  excludeProductIds={newSaleItems.map((item) => item.product_id)}
-                />
-
-                {newSaleItems.length > 0 ? (
-                  <div className="border rounded-md overflow-hidden mt-4">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Producto</TableHead>
-                            <TableHead className="w-32">Cantidad</TableHead>
-                            <TableHead className="hidden sm:table-cell">Precio</TableHead>
-                            <TableHead>Total</TableHead>
-                            <TableHead className="w-12"></TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {newSaleItems.map((item, index) => (
-                            <TableRow key={index}>
-                              <TableCell>
-                                <div>
-                                  <div className="truncate max-w-32 font-medium">{item.product_name}</div>
-                                  {item.variant_name && (
-                                    <div className="text-xs text-gray-500">{item.variant_name}</div>
-                                  )}
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <Switch
-                                      checked={item.price_type === "wholesale"}
-                                      onCheckedChange={() => handleToggleItemPriceType(index)}
-                                      className="scale-75"
-                                    />
-                                    <Label className="text-xs">
-                                      {item.price_type === "wholesale" ? "Puesto" : "Público"}
-                                    </Label>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center">
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-6 w-6 bg-transparent"
-                                    onClick={() => handleUpdateItemQuantity(index, item.quantity - 1)}
-                                    disabled={item.quantity <= 1}
-                                  >
-                                    -
-                                  </Button>
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    value={item.quantity}
-                                    onChange={(e) =>
-                                      handleUpdateItemQuantity(index, Number.parseInt(e.target.value) || 1)
-                                    }
-                                    className="h-8 w-12 mx-1 text-center p-1"
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-6 w-6 bg-transparent"
-                                    onClick={() => handleUpdateItemQuantity(index, item.quantity + 1)}
-                                  >
-                                    +
-                                  </Button>
-                                </div>
-                              </TableCell>
-                              <TableCell className="hidden sm:table-cell">{formatCurrency(item.unit_price)}</TableCell>
-                              <TableCell>{formatCurrency(item.total)}</TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleRemoveItem(index)}
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 border rounded-md text-gray-500">
-                    No hay productos agregados a la venta
-                  </div>
-                )}
-              </div>
-
-              {/* Enhanced Payment Section */}
-              {saleType === "contado" && newSaleItems.length > 0 && (
-                <div className="space-y-4 p-4 border rounded-md bg-gray-50">
-                  <h3 className="text-lg font-medium flex items-center">
-                    <DollarSign className="h-5 w-5 mr-2" />
-                    Información de Pago
-                  </h3>
-
-                  {/* Total Amount Display */}
-                  <div className="bg-white p-4 rounded-md border-2 border-blue-200">
-                    <div className="text-center">
-                      <div className="text-sm text-gray-600 mb-1">Total a Pagar</div>
-                      <div className="text-3xl font-bold text-blue-600">{formatCurrency(calculateTotal())}</div>
-                    </div>
+                <div className="space-y-10">
+                  {/* Selección de cliente con Estilo Big UI */}
+                  <div className="space-y-4">
+                    <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Titular de la Cuenta</Label>
+                    <CustomerSelector onCustomerSelect={setSelectedCustomer} selectedCustomer={selectedCustomer} />
                   </div>
 
-                  {/* Payment Method Selection */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Método de Pago</h4>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant={paymentMethod === "efectivo" ? "default" : "outline"}
-                        onClick={() => {
-                          setPaymentMethod("efectivo")
-                          setShowChangeCalculator(true)
-                        }}
-                        size="sm"
-                      >
-                        Efectivo
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={paymentMethod === "tarjeta" ? "default" : "outline"}
-                        onClick={() => {
-                          setPaymentMethod("tarjeta")
-                          setShowChangeCalculator(false)
-                          setAmountPaid(calculateTotal().toString())
-                        }}
-                        size="sm"
-                      >
-                        Tarjeta
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={paymentMethod === "transferencia" ? "default" : "outline"}
-                        onClick={() => {
-                          setPaymentMethod("transferencia")
-                          setShowChangeCalculator(false)
-                          setAmountPaid(calculateTotal().toString())
-                        }}
-                        size="sm"
-                      >
-                        Transferencia
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Payment Amount Input */}
-                  <div className="space-y-2">
-                    <Label htmlFor="payment_amount">
-                      {paymentMethod === "efectivo" ? "Con cuánto paga" : "Monto pagado"}
-                    </Label>
-                    <Input
-                      id="payment_amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={amountPaid}
-                      onChange={(e) => setAmountPaid(e.target.value)}
-                      className="text-lg font-bold text-center"
-                    />
-                  </div>
-
-                  {/* Change Calculation */}
-                  {paymentMethod === "efectivo" && amountPaid && (
-                    <div className="bg-white p-4 rounded-md border-2 border-green-200">
-                      <div className="text-center">
-                        <div className="text-sm text-gray-600 mb-1">Cambio</div>
-                        <div
-                          className={`text-2xl font-bold ${calculateChange() >= 0 ? "text-green-600" : "text-red-600"}`}
+                  {/* Tipo de venta - Botones Gigantes */}
+                  {selectedCustomer && (
+                    <div className="space-y-4">
+                      <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Modalidad de Transaccion</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button
+                          type="button"
+                          onClick={() => setSaleType("contado")}
+                          className={cn(
+                            "h-24 rounded-3xl flex flex-col items-center justify-center gap-2 font-black transition-all border-2 uppercase text-xs tracking-widest italic",
+                            saleType === "contado" 
+                              ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]" 
+                              : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                          )}
                         >
-                          {formatCurrency(calculateChange())}
-                        </div>
-                        {calculateChange() < 0 && <div className="text-sm text-red-600 mt-1">⚠️ Monto insuficiente</div>}
+                          <DollarSign className={cn("h-6 w-6 mb-1", saleType === "contado" ? "text-emerald-400" : "text-slate-300")} />
+                          Venta de Contado
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSaleType("credito")}
+                          className={cn(
+                            "h-24 rounded-3xl flex flex-col items-center justify-center gap-2 font-black transition-all border-2 uppercase text-xs tracking-widest italic",
+                            saleType === "credito" 
+                              ? "bg-orange-500 border-orange-500 text-white shadow-xl scale-[1.02]" 
+                              : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                          )}
+                        >
+                          <CreditCard className={cn("h-6 w-6 mb-1", saleType === "credito" ? "text-orange-200" : "text-slate-300")} />
+                          Linea de Credito
+                        </button>
                       </div>
                     </div>
                   )}
-                </div>
-              )}
 
-              {/* Resumen */}
-              {newSaleItems.length > 0 && (
-                <div className="border-t pt-4 mt-4">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Subtotal:</span>
+                  {/* Configuración de crédito Big UI */}
+                  {saleType === "credito" && selectedCustomer && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-10 rounded-[32px] bg-orange-50 border border-orange-100">
+                      <div className="space-y-4">
+                        <Label className="text-[11px] font-black uppercase tracking-widest text-orange-600/60">Limite de Vencimiento</Label>
+                        <div className="relative">
+                          <Calendar className="absolute left-6 top-1/2 transform -translate-y-1/2 text-orange-300 h-6 w-6" />
+                          <Input
+                            type="date"
+                            value={creditDueDate}
+                            onChange={(e) => setCreditDueDate(e.target.value)}
+                            className="h-16 pl-16 rounded-2xl border-none bg-white font-black text-orange-600 focus-visible:ring-2 focus-visible:ring-orange-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <Label className="text-[11px] font-black uppercase tracking-widest text-orange-600/60">Notas de Auditoria</Label>
+                        <Textarea
+                          value={creditNotes}
+                          onChange={(e) => setCreditNotes(e.target.value)}
+                          placeholder="Observaciones de riesgo o crediticias..."
+                          className="rounded-2xl border-none bg-white font-bold p-6 min-h-[100px] focus-visible:ring-2 focus-visible:ring-orange-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selección de productos Big UI */}
+                  <div className="space-y-6 pt-4 border-t border-slate-50">
+                    <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Escaneo y Selección de Items</Label>
+                    <ProductSelector
+                      onProductSelect={handleAddProduct}
+                      excludeProductIds={newSaleItems.map((item) => item.product_id)}
+                    />
+
+                    {newSaleItems.length > 0 ? (
+                      <div className="bg-slate-50/50 rounded-[40px] border border-slate-100 overflow-hidden p-2">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="border-none hover:bg-transparent">
+                                <TableHead className="h-16 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">PRODUCTO</TableHead>
+                                <TableHead className="h-16 w-40 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">QUANTITY</TableHead>
+                                <TableHead className="h-16 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:table-cell">P. UNITARIO</TableHead>
+                                <TableHead className="h-16 text-[10px] font-black text-slate-400 uppercase tracking-widest">SUBTOTAL</TableHead>
+                                <TableHead className="h-16 w-16 p-0"></TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {newSaleItems.map((item, index) => (
+                                <TableRow key={index} className="border-slate-100/50 hover:bg-white transition-colors">
+                                  <TableCell className="px-6 py-6">
+                                    <div className="flex flex-col gap-1">
+                                      <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.product_name}</span>
+                                      <div className="flex items-center gap-3">
+                                        <Badge className={cn(
+                                          "border-none font-black px-3 py-1 rounded-lg uppercase text-[9px] tracking-widest italic",
+                                          item.price_type === 'wholesale' ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"
+                                        )}>
+                                          {item.price_type === "wholesale" ? "PRECIO MAYOREO" : "PRECIO PUBLICO"}
+                                        </Badge>
+                                        <button 
+                                          onClick={() => handleToggleItemPriceType(index)}
+                                          className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors underline underline-offset-4"
+                                        >
+                                          Cambiar Tarifa
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="py-6">
+                                    <div className="flex items-center justify-center bg-white rounded-2xl p-1 border border-slate-100 shadow-sm w-fit mx-auto">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateItemQuantity(index, item.quantity - 1)}
+                                        disabled={item.quantity <= 1}
+                                        className="h-10 w-10 flex items-center justify-center text-xl font-black text-slate-400 hover:text-slate-900 disabled:opacity-20 transition-colors"
+                                      >
+                                        -
+                                      </button>
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        value={item.quantity}
+                                        onChange={(e) => handleUpdateItemQuantity(index, Number.parseInt(e.target.value) || 1)}
+                                        className="h-10 w-12 border-none bg-transparent text-center font-black text-lg p-0 focus-visible:ring-0"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateItemQuantity(index, item.quantity + 1)}
+                                        className="h-10 w-10 flex items-center justify-center text-xl font-black text-slate-400 hover:text-slate-900 transition-colors"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="py-6 hidden sm:table-cell font-bold text-slate-400 italic">
+                                    {formatCurrency(item.unit_price)}
+                                  </TableCell>
+                                  <TableCell className="py-6 text-xl font-black text-slate-900 italic tracking-tighter">
+                                    {formatCurrency(item.total)}
+                                  </TableCell>
+                                  <TableCell className="p-0 px-4">
+                                    <button
+                                      onClick={() => handleRemoveItem(index)}
+                                      className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all mx-auto"
+                                    >
+                                      <X className="h-5 w-5" />
+                                    </button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-[44px]">
+                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200 mx-auto mb-4">
+                          <Plus className="h-8 w-8" />
+                        </div>
+                        <p className="text-xl font-black text-slate-300 tracking-tighter uppercase italic">Esperando seleccion de productos...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Sticky Sidebar Cart/Payment */}
+            <div className="space-y-8 xl:sticky xl:top-6 animate-in slide-in-from-right-10 duration-700">
+              <Card className="rounded-[44px] border-none shadow-2xl bg-white p-10 overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-[100px]" />
+                
+                <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic mb-8 flex items-center gap-3">
+                  Resumen <span className="text-emerald-500">Caja.</span>
+                </h3>
+
+                <div className="space-y-6 mb-10">
+                  <div className="flex justify-between items-center text-sm font-black text-slate-400 uppercase tracking-widest">
+                    <span>Bruto Total</span>
                     <span>{formatCurrency(calculateSubtotal())}</span>
                   </div>
                   {selectedCustomer && selectedCustomer.discount_percentage > 0 && (
-                    <div className="flex justify-between text-sm mb-1 text-green-600">
-                      <span>Descuento ({selectedCustomer.discount_percentage}%):</span>
+                    <div className="flex justify-between items-center text-sm font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-4 py-2 rounded-xl">
+                      <span>Descuento Especial</span>
                       <span>-{formatCurrency(calculateDiscount())}</span>
                     </div>
                   )}
                   {settings.tax_enabled && (
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>IVA ({settings.tax_rate}%):</span>
+                    <div className="flex justify-between items-center text-sm font-black text-slate-400 uppercase tracking-widest">
+                      <span>IVA Fiscal ({settings.tax_rate}%)</span>
                       <span>{formatCurrency(calculateSaleTax())}</span>
                     </div>
                   )}
-                  <div className="flex justify-between font-bold text-lg mt-2">
-                    <span>Total:</span>
-                    <span>{formatCurrency(calculateTotal())}</span>
+                  <div className="pt-6 border-t border-slate-100">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Monto Neto a Liquidar</p>
+                    <div className="text-6xl font-black text-slate-900 tracking-tighter italic">
+                      {formatCurrency(calculateTotal())}
+                    </div>
                   </div>
                 </div>
-              )}
 
-              {/* Botones de acción */}
-              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={resetForm} className="w-full sm:w-auto bg-transparent">
-                  Limpiar
-                </Button>
-                <Button onClick={handleCreateSale} disabled={newSaleItems.length === 0} className="w-full sm:w-auto">
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  {saleType === "credito" ? "Crear Venta a Crédito" : "Completar Venta"}
-                </Button>
+                {/* Info de Pago Big UI Sidebar */}
+                {saleType === "contado" && newSaleItems.length > 0 && (
+                  <div className="space-y-8 animate-in fade-in duration-500">
+                    <div className="space-y-4">
+                      <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Modalidad de Pago</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { id: 'efectivo', icon: DollarSign, label: 'Efectivo' },
+                          { id: 'tarjeta', icon: CreditCard, label: 'Tarjeta' },
+                          { id: 'transferencia', icon: ShoppingCart, label: 'Transf.' }
+                        ].map((method) => (
+                          <button
+                            key={method.id}
+                            type="button"
+                            onClick={() => {
+                              setPaymentMethod(method.id)
+                              if (method.id !== 'efectivo') {
+                                setShowChangeCalculator(false)
+                                setAmountPaid(calculateTotal().toString())
+                              } else {
+                                setShowChangeCalculator(true)
+                              }
+                            }}
+                            className={cn(
+                              "flex-1 h-14 rounded-2xl border-2 font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm",
+                              paymentMethod === method.id 
+                                ? "bg-slate-900 border-slate-900 text-white" 
+                                : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                            )}
+                          >
+                            <method.icon className={cn("h-4 w-4", paymentMethod === method.id ? "text-emerald-400" : "text-slate-300")} />
+                            {method.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-8 rounded-[32px] bg-slate-50 border border-slate-100 space-y-6">
+                      <div className="space-y-3 text-center">
+                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                          {paymentMethod === "efectivo" ? "Monto Recibido" : "Confirmacion Monto"}
+                        </Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={amountPaid}
+                          onChange={(e) => setAmountPaid(e.target.value)}
+                          className="h-20 text-4xl font-black text-center border-none bg-white rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-emerald-500 text-slate-900"
+                        />
+                      </div>
+
+                      {paymentMethod === "efectivo" && amountPaid && (
+                        <div className={cn(
+                          "p-6 rounded-2xl border-2 text-center transition-all animate-bounce-subtle",
+                          calculateChange() >= 0 ? "bg-emerald-50 border-emerald-500/20" : "bg-rose-50 border-rose-500/20 shadow-none animate-none"
+                        )}>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Cambio a Entregar</p>
+                          <p className={cn(
+                            "text-4xl font-black italic tracking-tighter",
+                            calculateChange() >= 0 ? "text-emerald-600" : "text-rose-600"
+                          )}>
+                            {formatCurrency(calculateChange())}
+                          </p>
+                          {calculateChange() < 0 && <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest mt-1 block">⚠️ Fondo Insuficiente</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-10 space-y-4">
+                  <Button
+                    onClick={handleCreateSale}
+                    disabled={newSaleItems.length === 0}
+                    className="w-full h-24 rounded-[32px] bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 active:scale-[0.98] transition-all group"
+                  >
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em] mb-1 group-hover:tracking-[0.4em] transition-all">Consolidar Operacion</span>
+                      <div className="flex items-center gap-3">
+                        <ShoppingCart className="h-6 w-6" />
+                        <span className="text-xl font-black italic tracking-tight">
+                          {saleType === "credito" ? "Autorizar Credito" : "Completar Venta"}
+                        </span>
+                      </div>
+                    </div>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    onClick={resetForm} 
+                    className="w-full h-14 rounded-2xl font-black uppercase text-xs tracking-widest text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                  >
+                    Abortar Operacion
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Tips de Seguridad/Venta */}
+              <div className="p-8 rounded-[32px] bg-slate-900 text-white flex items-center gap-6 shadow-xl">
+                <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400">
+                  <ShoppingCart className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-widest mb-1 italic">Venta Segura.</h4>
+                  <p className="text-[10px] font-medium text-slate-400 leading-tight">Verifique siempre el cambio físico antes de finalizar la operación en el sistema.</p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 
-      {/* Diálogo para ver/imprimir venta */}
+      {/* Diálogo para ver/imprimir venta - BIG UI Redesign */}
       <Dialog open={isViewSaleDialogOpen} onOpenChange={setIsViewSaleDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Venta #{selectedSale?.sale_number}</DialogTitle>
-          </DialogHeader>
-          {selectedSale && (
-            <div className="space-y-4">
-              <div className="border rounded-md p-4">{renderSaleTicket(selectedSale)}</div>
-              <div className="flex flex-col sm:flex-row justify-between gap-2">
-                <div>
-                  {selectedSale.status === "completada" && (
-                    <Button onClick={() => handleCancelSale(selectedSale)} variant="destructive" size="sm">
-                      <X className="h-4 w-4 mr-2" />
-                      Cancelar Venta
-                    </Button>
-                  )}
-                </div>
-                <PrintableDocument
-                  title={`Venta #${selectedSale.sale_number}`}
-                  content={renderSaleTicket(selectedSale)}
-                />
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto rounded-[44px] border-none shadow-2xl p-0 overflow-hidden">
+          <div className="bg-[#f8fafc] p-10 space-y-10">
+            <DialogHeader>
+              <div className="flex justify-between items-center mb-6">
+                <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter">
+                  Comprobante <span className="text-emerald-500 italic">#{selectedSale?.sale_number}</span>
+                </DialogTitle>
+                <Badge className={cn(
+                  "font-black px-4 py-2 rounded-xl uppercase text-[10px] tracking-widest italic border-none shadow-sm",
+                  selectedSale?.status === "completada" ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"
+                )}>
+                  {selectedSale?.status === "completada" ? "Liquidada" : "Cancelada"}
+                </Badge>
               </div>
-            </div>
-          )}
+            </DialogHeader>
+
+            {selectedSale && (
+              <div className="space-y-10 animate-in fade-in zoom-in-95 duration-500">
+                <div className="bg-white rounded-[32px] shadow-sm p-1 border border-slate-100 overflow-hidden">
+                  <div className="p-10 bg-[#fff] m-2 rounded-[28px] border border-slate-50 shadow-inner">
+                    {renderSaleTicket(selectedSale)}
+                  </div>
+                </div>
+                
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6 p-8 bg-white rounded-[32px] border border-slate-100">
+                  <div className="flex gap-4 w-full md:w-auto">
+                    {selectedSale.status === "completada" && (
+                      <Button 
+                        onClick={() => handleCancelSale(selectedSale)} 
+                        variant="ghost" 
+                        className="h-16 px-8 rounded-2xl font-black uppercase text-xs tracking-widest text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all border border-rose-100"
+                      >
+                        <X className="h-5 w-5 mr-3" />
+                        Cancelar Venta
+                      </Button>
+                    )}
+                  </div>
+                  <div className="w-full md:w-auto">
+                    <PrintableDocument
+                      title={`Venta #${selectedSale.sale_number}`}
+                      content={renderSaleTicket(selectedSale)}
+                      className="h-16 w-full md:w-auto px-12 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3"
+                    >
+                      <Printer className="h-5 w-5 mr-1" />
+                      Imprimir Comprobante
+                    </PrintableDocument>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

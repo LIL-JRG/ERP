@@ -10,9 +10,11 @@ interface PrintableDocumentProps {
   title: string
   content: React.ReactNode
   onAfterPrint?: () => void
+  children?: React.ReactNode
+  className?: string
 }
 
-export function PrintableDocument({ title, content, onAfterPrint }: PrintableDocumentProps) {
+export function PrintableDocument({ title, content, onAfterPrint, children, className }: PrintableDocumentProps) {
   const contentRef = useRef<HTMLDivElement>(null)
 
   const handlePrint = () => {
@@ -114,9 +116,13 @@ export function PrintableDocument({ title, content, onAfterPrint }: PrintableDoc
       <div className="hidden">
         <div ref={contentRef}>{content}</div>
       </div>
-      <Button onClick={handlePrint} variant="outline" size="sm" className="flex items-center gap-1">
-        <Printer className="h-4 w-4" />
-        <span>Imprimir</span>
+      <Button onClick={handlePrint} variant="outline" size="sm" className={className || "flex items-center gap-1"}>
+        {children || (
+          <>
+            <Printer className="h-4 w-4" />
+            <span>Imprimir</span>
+          </>
+        )}
       </Button>
     </div>
   )
