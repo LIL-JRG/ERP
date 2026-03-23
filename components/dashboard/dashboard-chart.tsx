@@ -436,8 +436,9 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
                 dataKey="displayDate" 
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 13, fill: '#64748b', fontWeight: 700 }}
-                tickMargin={15}
+                tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }}
+                tickMargin={12}
+                interval={dateRange === "day" ? 1 : 0}
               />
               <YAxis hide={true} />
               <Tooltip 
@@ -463,8 +464,9 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
                 dataKey="displayDate" 
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 13, fill: '#64748b', fontWeight: 700 }}
-                tickMargin={15}
+                tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }}
+                tickMargin={12}
+                interval={dateRange === "day" ? 1 : 0}
               />
               <YAxis hide={true} />
               <Tooltip 
@@ -498,20 +500,20 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8">
-        <div className="space-y-2">
-          <CardTitle className="text-5xl font-black text-slate-900 tracking-tight">Análisis de Entradas Monetarias</CardTitle>
-          <p className="text-base font-bold text-slate-400 uppercase tracking-[0.2em]">Flujo de caja y movimientos</p>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div className="space-y-1">
+          <CardTitle className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Análisis de Entradas</CardTitle>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Flujo de caja y movimientos</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Navegación de fechas */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-2xl border border-slate-100">
-            <Button variant="ghost" size="icon" onClick={() => navigateDate("prev")} className="h-9 w-9 rounded-xl hover:bg-white hover:shadow-sm"> <ChevronLeft className="h-4 w-4" /> </Button>
+        <div className="flex items-center gap-2 bg-slate-50/50 p-1.5 rounded-2xl border border-slate-100/50">
+          {/* Navegación y Fecha */}
+          <div className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+            <Button variant="ghost" size="icon" onClick={() => navigateDate("prev")} className="h-8 w-8 rounded-lg hover:bg-slate-50"> <ChevronLeft className="h-4 w-4" /> </Button>
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-9 px-4 rounded-xl font-bold text-slate-700 hover:bg-white hover:shadow-sm">
-                  <CalendarIcon className="h-4 w-4 mr-2 text-[#10b981]" />
-                  {format(selectedDate, "MMM yyyy", { locale: es })}
+                <Button variant="ghost" size="sm" className="h-8 px-3 rounded-lg font-bold text-slate-700 hover:bg-slate-50 text-[11px]">
+                  <CalendarIcon className="h-3.5 w-3.5 mr-2 text-[#10b981]" />
+                  {format(selectedDate, dateRange === "day" ? "dd MMM yyyy" : "MMM yyyy", { locale: es })}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 rounded-3xl shadow-2xl border-none" align="center">
@@ -530,25 +532,27 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
                 />
               </PopoverContent>
             </Popover>
-            <Button variant="ghost" size="icon" onClick={() => navigateDate("next")} className="h-9 w-9 rounded-xl hover:bg-white hover:shadow-sm"> <ChevronRight className="h-4 w-4" /> </Button>
+            <Button variant="ghost" size="icon" onClick={() => navigateDate("next")} className="h-8 w-8 rounded-lg hover:bg-slate-50"> <ChevronRight className="h-4 w-4" /> </Button>
           </div>
 
+          {/* Rango de Vista */}
           <Select value={dateRange} onValueChange={(value: any) => setDateRange(value)}>
-            <SelectTrigger className="w-[120px] h-11 bg-slate-50 border-slate-100 rounded-2xl font-bold text-slate-700 focus:ring-[#10b981]/20">
+            <SelectTrigger className="w-[110px] h-10 bg-white border-slate-100 shadow-sm rounded-xl font-bold text-slate-700 focus:ring-[#10b981]/20 text-[11px]">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
-              <SelectItem value="day" className="font-bold">Vista Diaria</SelectItem>
-              <SelectItem value="week" className="font-bold">Vista Semanal</SelectItem>
-              <SelectItem value="month" className="font-bold">Vista Mensual</SelectItem>
+            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+              <SelectItem value="day" className="font-bold text-xs">Diaria</SelectItem>
+              <SelectItem value="week" className="font-bold text-xs">Semanal</SelectItem>
+              <SelectItem value="month" className="font-bold text-xs">Mensual</SelectItem>
             </SelectContent>
           </Select>
 
-          <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100 h-11">
+          {/* Tipo de Visualización */}
+          <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-100 h-10">
             <Button
                variant={viewType === "bar" ? "secondary" : "ghost"}
                size="icon"
-               className={cn("h-9 w-9 rounded-xl transition-all", viewType === "bar" ? "bg-white shadow-sm text-[#10b981]" : "text-slate-400")}
+               className={cn("h-8 w-8 rounded-lg transition-all", viewType === "bar" ? "bg-emerald-50 text-[#10b981]" : "text-slate-400")}
                onClick={() => setViewType("bar")}
             >
               <BarChartIcon className="h-4 w-4" />
@@ -556,7 +560,7 @@ export default function DashboardChart({ onDataUpdate }: DashboardChartProps) {
             <Button
                variant={viewType === "line" ? "secondary" : "ghost"}
                size="icon"
-               className={cn("h-9 w-9 rounded-xl transition-all", viewType === "line" ? "bg-white shadow-sm text-[#10b981]" : "text-slate-400")}
+               className={cn("h-8 w-8 rounded-lg transition-all", viewType === "line" ? "bg-emerald-50 text-[#10b981]" : "text-slate-400")}
                onClick={() => setViewType("line")}
             >
               <LineChartIcon className="h-4 w-4" />

@@ -16,14 +16,17 @@ import {
   LayoutDashboard,
   BarChart3,
   TrendingDown,
-  FileText as FileTextIcon
+  FileText as FileTextIcon,
+  Calendar as CalendarIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { QuickMovementsWidget } from "./quick-movements-widget"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import { useSettings } from "@/hooks/use-settings"
-import { format } from "date-fns"
+import { format, subDays, startOfDay, endOfDay, isSameDay } from "date-fns"
 import { es } from "date-fns/locale"
 
 interface DashboardViewProps {
@@ -34,6 +37,8 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
   const { formatCurrency } = useSettings()
   const [loading, setLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  const [selectedStatDate, setSelectedStatDate] = useState<Date>(new Date())
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [stats, setStats] = useState({
     totalProducts: 0,
     lowStockProducts: 0,
@@ -54,13 +59,6 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
     todayNewProducts: 0,
   })
 
-  // Mock data for trends and sparklines as shown in the mockup
-  const mockTrends = {
-    sales: { text: "+0.0%", variant: "neutral" as const },
-    cash: { text: "Stable", variant: "neutral" as const },
-    margin: { text: "Target Hit", variant: "success" as const }
-  }
-
   // Helper para calcular tendencias
   const calculateTrend = (current: number, last: number) => {
     if (last === 0) return { value: current > 0 ? "+100%" : "0.0%", isPositive: current > 0 }
@@ -72,74 +70,74 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
   const fetchStats = useCallback(async () => {
     setLoading(true)
     try {
-      const now = new Date()
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+      const startOfSelected = startOfDay(selectedStatDate)
+      const endOfSelected = endOfDay(selectedStatDate)
       
-      const yesterday = new Date(now)
-      yesterday.setDate(now.getDate() - 1)
-      const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate())
-      const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999)
+      const previousDate = subDays(selectedStatDate, 1)
+      const startOfPrevious = startOfDay(previousDate)
+      const endOfPrevious = endOfDay(previousDate)
 
       // Peticiones en paralelo
       const [
         prodRes, 
         custRes, 
-        todaySalesRes, 
-        yesterdaySalesRes, 
+        selectedSalesRes, 
+        previousSalesRes, 
         quotesRes, 
-        yesterdayQuotesRes, 
-        todayEntriesRes, 
-        todayExitsRes, 
-        todayCashSalesRes,
-        yesterdayEntriesRes,
-        yesterdayExitsRes,
-        yesterdayCashSalesRes
+        previousQuotesRes, 
+        selectedEntriesRes, 
+        selectedExitsRes, 
+        selectedCashSalesRes,
+        previousEntriesRes,
+        previousExitsRes,
+        previousCashSalesRes
       ] = await Promise.all([
         supabase.from("products").select("stock_quantity, min_stock, cost, public_price, category"),
         supabase.from("customers").select("id"),
-        // Ventas hoy
-        supabase.from("sales").select("total, id").eq("status", "completada").gte("created_at", startOfToday.toISOString()).lte("created_at", endOfToday.toISOString()),
-        // Ventas ayer
-        supabase.from("sales").select("total").eq("status", "completada").gte("created_at", startOfYesterday.toISOString()).lte("created_at", endOfYesterday.toISOString()),
-        // Cotizaciones (todas las pendientes y las de hoy)
-        supabase.from("quotes").select("id, status, created_at"),
-        // Cotizaciones ayer
-        supabase.from("quotes").select("id").gte("created_at", startOfYesterday.toISOString()).lte("created_at", endOfYesterday.toISOString()),
-        // Movimientos hoy
-        supabase.from("cash_movements").select("amount").eq("type", "entrada").gte("created_at", startOfToday.toISOString()),
-        supabase.from("cash_movements").select("amount").eq("type", "salida").gte("created_at", startOfToday.toISOString()),
-        supabase.from("sales").select("total").eq("status", "completada").eq("payment_method", "efectivo").gte("created_at", startOfToday.toISOString()),
-        // Movimientos ayer
-        supabase.from("cash_movements").select("amount").eq("type", "entrada").gte("created_at", startOfYesterday.toISOString()).lte("created_at", endOfYesterday.toISOString()),
-        supabase.from("cash_movements").select("amount").eq("type", "salida").gte("created_at", startOfYesterday.toISOString()).lte("created_at", endOfYesterday.toISOString()),
-        supabase.from("sales").select("total").eq("status", "completada").eq("payment_method", "efectivo").gte("created_at", startOfYesterday.toISOString()).lte("created_at", endOfYesterday.toISOString()),
+        supabase.from("sales")
+          .select("total, cost_total, created_at")
+          .eq("status", "completada")
+          .gte("created_at", startOfSelected.toISOString())
+          .lte("created_at", endOfSelected.toISOString()),
+        supabase.from("sales")
+          .select("total, created_at")
+          .eq("status", "completada")
+          .gte("created_at", startOfPrevious.toISOString())
+          .lte("created_at", endOfPrevious.toISOString()),
+        supabase.from("quotes").select("id, status, created_at").gte("created_at", startOfSelected.toISOString()).lte("created_at", endOfSelected.toISOString()),
+        supabase.from("quotes").select("id, created_at").gte("created_at", startOfPrevious.toISOString()).lte("created_at", endOfPrevious.toISOString()),
+        supabase.from("cash_movements").select("amount").eq("type", "entrada").gte("created_at", startOfSelected.toISOString()).lte("created_at", endOfSelected.toISOString()),
+        supabase.from("cash_movements").select("amount").eq("type", "salida").gte("created_at", startOfSelected.toISOString()).lte("created_at", endOfSelected.toISOString()),
+        supabase.from("cash_movements").select("amount").eq("type", "venta").gte("created_at", startOfSelected.toISOString()).lte("created_at", endOfSelected.toISOString()),
+        supabase.from("cash_movements").select("amount").eq("type", "entrada").gte("created_at", startOfPrevious.toISOString()).lte("created_at", endOfPrevious.toISOString()),
+        supabase.from("cash_movements").select("amount").eq("type", "salida").gte("created_at", startOfPrevious.toISOString()).lte("created_at", endOfPrevious.toISOString()),
+        supabase.from("cash_movements").select("amount").eq("type", "venta").gte("created_at", startOfPrevious.toISOString()).lte("created_at", endOfPrevious.toISOString()),
       ])
 
       // Cálculos Ventas
-      const todaySales = todaySalesRes.data?.reduce((sum, s) => sum + s.total, 0) || 0
-      const yesterdaySales = yesterdaySalesRes.data?.reduce((sum, s) => sum + s.total, 0) || 0
+      const selectedSales = selectedSalesRes.data?.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0) || 0
+      const previousSales = previousSalesRes.data?.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0) || 0
 
-      // Cálculos Efectivo Hoy
-      const todayEntries = todayEntriesRes.data?.reduce((sum, e) => sum + e.amount, 0) || 0
-      const todayExits = todayExitsRes.data?.reduce((sum, e) => sum + e.amount, 0) || 0
-      const todayCashSales = todayCashSalesRes.data?.reduce((sum, s) => sum + s.total, 0) || 0
-      const todayNetCash = todayCashSales + todayEntries - todayExits
+      // Cálculos Efectivo
+      const selectedEntries = (selectedEntriesRes.data?.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0) || 0) + 
+                            (selectedCashSalesRes.data?.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0) || 0)
+      const selectedExits = selectedExitsRes.data?.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0) || 0
+      const selectedNetCash = selectedEntries - selectedExits
 
-      // Cálculos Efectivo Ayer
-      const yesterdayEntries = yesterdayEntriesRes.data?.reduce((sum, e) => sum + e.amount, 0) || 0
-      const yesterdayExits = yesterdayExitsRes.data?.reduce((sum, e) => sum + e.amount, 0) || 0
-      const yesterdayCashSales = yesterdayCashSalesRes.data?.reduce((sum, s) => sum + s.total, 0) || 0
-      const yesterdayNetCash = yesterdayCashSales + yesterdayEntries - yesterdayExits
+      const previousEntries = (previousEntriesRes.data?.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0) || 0) +
+                             (previousCashSalesRes.data?.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0) || 0)
+      const previousExits = previousExitsRes.data?.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0) || 0
+      const previousNetCash = previousEntries - previousExits
 
       // Cálculos Cotizaciones
       const pendingQuotes = quotesRes.data?.filter(q => q.status === 'pendiente').length || 0
-      const todayQuotes = quotesRes.data?.filter(q => new Date(q.created_at) >= startOfToday).length || 0
-      const yesterdayQuotes = yesterdayQuotesRes.data?.length || 0
+      const selectedQuotes = quotesRes.data?.length || 0
+      const previousQuotes = previousQuotesRes.data?.length || 0
 
-      // Cálculo de Margen (Hoy vs Ayer)
-      const grossMargin = todaySales > 0 ? 32.4 : 0 
-      const yesterdayGrossMargin = yesterdaySales > 0 ? 31.6 : 0
+      // Margen Bruto
+      const totalCost = selectedSalesRes.data?.reduce((acc, s) => acc + (parseFloat(s.cost_total) || 0), 0) || 0
+      const grossMargin = selectedSales > 0 ? ((selectedSales - totalCost) / selectedSales) * 100 : 0
+      const yesterdayGrossMargin = 0
 
       // Categoría de mayor rendimiento
       const categoryTotals: Record<string, number> = {}
@@ -155,15 +153,15 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
         lowStockProducts: prodRes.data?.filter(p => p.stock_quantity <= p.min_stock && p.stock_quantity > 0).length || 0,
         outOfStockProducts: prodRes.data?.filter(p => p.stock_quantity === 0).length || 0,
         totalCustomers: custRes.data?.length || 0,
-        todaySales,
-        yesterdaySales,
+        todaySales: selectedSales,
+        yesterdaySales: previousSales,
         pendingQuotes,
-        todayQuotes,
-        yesterdayQuotes,
-        todayEntries,
-        todayExits,
-        todayNetCash,
-        yesterdayNetCash,
+        todayQuotes: selectedQuotes,
+        yesterdayQuotes: previousQuotes,
+        todayEntries: selectedEntries,
+        todayExits: selectedExits,
+        todayNetCash: selectedNetCash,
+        yesterdayNetCash: previousNetCash,
         grossMargin,
         yesterdayGrossMargin,
         bestCategory,
@@ -175,11 +173,15 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [selectedStatDate])
 
   useEffect(() => {
     fetchStats()
   }, [fetchStats])
+
+  const isToday = isSameDay(selectedStatDate, new Date())
+  const statLabel = isToday ? "del Día" : "de la Fecha"
+  const comparisonLabel = isToday ? "vs ayer" : "vs anterior"
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -194,22 +196,53 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
              Dashboard General
            </h1>
            <p className="text-sm md:text-base font-bold text-slate-400">
-             Resumen global y análisis de rendimiento operativo de hoy.
+             Resumen global y análisis de rendimiento operativo {isToday ? "de hoy" : "de la fecha"}.
            </p>
         </div>
         
-        <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-          <div className="px-4 py-2 border-r border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">ÚLTIMA SINCRONIZACIÓN</p>
-            <p className="text-xs font-black text-slate-700">{format(new Date(), "HH:mm", { locale: es })} • {format(new Date(), "PPP", { locale: es })}</p>
+        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 group transition-all hover:shadow-md">
+          <div className="flex items-center gap-1">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-9 px-4 rounded-xl font-bold text-slate-700 hover:bg-slate-50 gap-2 transition-all">
+                  <CalendarIcon className="h-4 w-4 text-[#10b981]" />
+                  <span className="text-[11px] uppercase tracking-wider">
+                    {format(selectedStatDate, isToday ? "'Hoy,' dd MMM" : "dd MMM yyyy", { locale: es })}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 rounded-3xl shadow-2xl border-none overflow-hidden" align="end">
+                <Calendar
+                  mode="single"
+                  selected={selectedStatDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedStatDate(date)
+                      setIsCalendarOpen(false)
+                    }
+                  }}
+                  initialFocus
+                  className="rounded-3xl border-0 p-4"
+                  locale={es}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
+          
+          <div className="h-6 w-px bg-slate-100 mx-1 hidden sm:block" />
+          
+          <div className="px-3 hidden sm:block">
+            <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Update</p>
+            <p className="text-[11px] font-black text-slate-500">{format(lastUpdate, "HH:mm")}</p>
+          </div>
+
           <Button 
             onClick={onDataUpdate || fetchStats} 
             disabled={loading}
-            className="rounded-xl bg-[#10b981] hover:bg-[#059669] text-white font-black text-xs uppercase tracking-widest px-6 h-10 shadow-lg shadow-emerald-200 transition-all active:scale-95"
+            size="icon"
+            className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-200 transition-all active:scale-95 h-9 w-9"
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Sincronizar
+            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </Button>
         </div>
       </header>
@@ -217,11 +250,11 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
-          title="Ventas del Día"
+          title={`Ventas ${statLabel}`}
           value={formatCurrency(stats.todaySales)}
           icon={DollarSign}
           trend={calculateTrend(stats.todaySales, stats.yesterdaySales)}
-          trendLabel="vs ayer"
+          trendLabel={comparisonLabel}
           loading={loading}
           badge={{ 
             text: stats.todaySales >= stats.yesterdaySales ? "Crecimiento" : "Descenso", 
@@ -236,18 +269,18 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
           }
         />
         <StatCard
-          title="Efectivo Disponible"
+          title={`Efectivo ${statLabel}`}
           value={formatCurrency(stats.todayNetCash)}
           icon={ArrowUpRight}
           trend={calculateTrend(stats.todayNetCash, stats.yesterdayNetCash)}
-          trendLabel="vs ayer"
+          trendLabel={comparisonLabel}
           loading={loading}
           badge={{ 
             text: stats.todayNetCash > 0 ? "Flujo Positivo" : "Sin Movimientos", 
             type: stats.todayNetCash > 0 ? "success" : "neutral" 
           }}
           footer={
-             <div className="space-y-2">
+            <div className="space-y-2">
                 <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase">
                   <span>PROGRESO META DÍA</span>
                   <span>{Math.min(100, Math.round((stats.todayNetCash / 5000) * 100))}%</span>
@@ -262,11 +295,11 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
           }
         />
         <StatCard
-          title="Cotizaciones del Día"
+          title={`Cotizaciones ${statLabel}`}
           value={stats.todayQuotes}
           icon={FileText}
           trend={calculateTrend(stats.todayQuotes, stats.yesterdayQuotes)}
-          trendLabel="vs ayer"
+          trendLabel={comparisonLabel}
           loading={loading}
           badge={{ 
             text: stats.todayQuotes > 5 ? "Alta Carga" : "Al día", 
@@ -286,11 +319,11 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
           }
         />
         <StatCard
-          title="Margen Bruto Hoy"
+          title={`Margen Bruto ${isToday ? "Hoy" : ""}`}
           value={`${stats.grossMargin.toFixed(1)}%`}
           icon={TrendingUp}
           trend={calculateTrend(stats.grossMargin, stats.yesterdayGrossMargin)}
-          trendLabel="vs ayer"
+          trendLabel={comparisonLabel}
           loading={loading}
           badge={{ 
             text: stats.grossMargin > 30 ? "Saludable" : "Bajo", 
@@ -299,7 +332,7 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
           footer={
             <div className="flex items-center gap-2 group cursor-pointer">
               <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-50 group-hover:bg-emerald-400 transition-colors" style={{ width: `${stats.grossMargin}%` }} />
+                <div className="h-full bg-emerald-500 group-hover:bg-emerald-400 transition-colors" style={{ width: `${stats.grossMargin}%` }} />
               </div>
               <span className="text-[10px] font-black text-slate-400 uppercase">ANÁLISIS</span>
             </div>
