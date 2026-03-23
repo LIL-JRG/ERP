@@ -50,12 +50,12 @@ export default function LoginForm() {
               <Wrench className="h-10 w-10 text-white" />
             </div>
           </div>
-          <CardTitle className="text-6xl font-black text-slate-900 tracking-tighter leading-none mb-4">
+          <CardTitle className="text-5xl font-black text-slate-900 tracking-tighter leading-none mb-4">
             H2R
             <span className="text-[#10b981]"> ERP</span>
-            <span className="text-lg block mt-2 text-slate-400 font-bold uppercase tracking-[0.3em]">v2.0</span>
+            <span className="text-sm block mt-2 text-slate-400 font-bold uppercase tracking-[0.3em]">v2.0</span>
           </CardTitle>
-          <CardDescription className="text-lg font-bold text-slate-400 max-w-sm mx-auto">
+          <CardDescription className="text-base font-bold text-slate-400 max-w-sm mx-auto">
             Bienvenido de nuevo.
           </CardDescription>
         </CardHeader>
@@ -68,7 +68,7 @@ export default function LoginForm() {
                   id="email"
                   type="email"
                   placeholder="ejemplo@h2r.com"
-                  className="h-16 bg-slate-50 border-none rounded-3xl text-lg font-black text-slate-700 placeholder:text-slate-300 focus-visible:ring-2 focus-visible:ring-emerald-500/20 transition-all"
+                  className="h-14 bg-slate-50 border-none rounded-2xl text-base font-black text-slate-700 placeholder:text-slate-300 focus-visible:ring-2 focus-visible:ring-emerald-500/20 transition-all"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -80,7 +80,7 @@ export default function LoginForm() {
                   id="password"
                   type="password"
                   placeholder="••••••••••••"
-                  className="h-16 bg-slate-50 border-none rounded-3xl text-lg font-black text-slate-700 placeholder:text-slate-300 focus-visible:ring-2 focus-visible:ring-emerald-500/20 transition-all"
+                  className="h-14 bg-slate-50 border-none rounded-2xl text-base font-black text-slate-700 placeholder:text-slate-300 focus-visible:ring-2 focus-visible:ring-emerald-500/20 transition-all"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -96,7 +96,7 @@ export default function LoginForm() {
 
             <Button 
               type="submit" 
-              className="w-full h-16 rounded-[28px] bg-[#10b981] hover:bg-[#059669] text-white font-black text-lg uppercase tracking-[0.2em] shadow-xl shadow-emerald-200 transition-all active:scale-[0.98] disabled:opacity-50"
+              className="w-full h-14 rounded-[20px] bg-[#10b981] hover:bg-[#059669] text-white font-black text-base uppercase tracking-[0.2em] shadow-xl shadow-emerald-200 transition-all active:scale-[0.98] disabled:opacity-50"
               disabled={loading}
             >
               {loading ? (

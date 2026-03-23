@@ -190,7 +190,7 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
              <LayoutDashboard className="h-5 w-5" />
              PANEL DE CONTROL
            </div>
-           <h1 className="text-7xl font-black text-slate-900 tracking-tighter leading-none">
+           <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none">
              Dashboard General
            </h1>
            <p className="text-xl font-bold text-slate-400">
@@ -215,7 +215,7 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
       </header>
 
       {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           title="Ventas del Día"
           value={formatCurrency(stats.todaySales)}
@@ -308,10 +308,10 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
       </div>
 
       {/* Main Analysis Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-10">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 md:gap-6">
         <div className="xl:col-span-3">
-          <Card className="border-none shadow-sm rounded-[40px] overflow-hidden bg-white">
-            <CardContent className="p-8 lg:p-10">
+          <Card className="border-none shadow-sm rounded-[32px] overflow-hidden bg-white">
+            <CardContent className="p-6 lg:p-8">
                <DashboardChart onDataUpdate={fetchStats} />
             </CardContent>
           </Card>
@@ -322,47 +322,47 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
       </div>
 
       {/* Row of Horizontal Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 pb-12">
-         <Card className="border-none shadow-sm rounded-[40px] overflow-hidden bg-white p-3 group cursor-pointer hover:shadow-lg transition-all duration-300">
-           <div className="flex items-center gap-6 p-8 rounded-[32px] group-hover:bg-slate-50 transition-colors">
-              <div className="p-6 rounded-[24px] bg-emerald-50 text-emerald-600 transition-transform duration-500 group-hover:scale-110">
-                <Package className="h-8 w-8" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 pb-12 mt-6">
+         <Card className="border-none shadow-sm rounded-[28px] overflow-hidden bg-white p-2 group cursor-pointer hover:shadow-lg transition-all duration-300">
+           <div className="flex items-center gap-4 p-5 rounded-[24px] group-hover:bg-slate-50 transition-colors">
+              <div className="p-4 rounded-[16px] bg-emerald-50 text-emerald-600 transition-transform duration-500 group-hover:scale-110">
+                <Package className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-2 text-tight">Ítems Totales del Catálogo</p>
-                <div className="flex items-baseline gap-3">
-                  <span className="text-4xl font-black text-slate-900 tracking-tighter">{stats.totalProducts.toLocaleString()}</span>
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">Sincronizado</span>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ítems Totales del Catálogo</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{stats.totalProducts.toLocaleString()}</span>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Sincronizado</span>
                 </div>
               </div>
            </div>
          </Card>
 
-         <Card className="border-none shadow-sm rounded-[40px] overflow-hidden bg-white p-3 group cursor-pointer hover:shadow-lg transition-all duration-300">
-           <div className="flex items-center gap-6 p-8 rounded-[32px] group-hover:bg-slate-50 transition-colors">
-              <div className="p-6 rounded-[24px] bg-blue-50 text-blue-600 transition-transform duration-500 group-hover:scale-110">
-                <Users className="h-8 w-8" />
+         <Card className="border-none shadow-sm rounded-[28px] overflow-hidden bg-white p-2 group cursor-pointer hover:shadow-lg transition-all duration-300">
+           <div className="flex items-center gap-4 p-5 rounded-[24px] group-hover:bg-slate-50 transition-colors">
+              <div className="p-4 rounded-[16px] bg-blue-50 text-blue-600 transition-transform duration-500 group-hover:scale-110">
+                <Users className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-2 text-tight">Base de Clientes Activos</p>
-                <div className="flex items-baseline gap-3">
-                  <span className="text-4xl font-black text-slate-900 tracking-tighter">{stats.totalCustomers.toLocaleString()}</span>
-                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Registrados</span>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Base de Clientes Activos</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{stats.totalCustomers.toLocaleString()}</span>
+                  <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Registrados</span>
                 </div>
               </div>
            </div>
          </Card>
 
-         <Card className="border-none shadow-sm rounded-[40px] overflow-hidden bg-white p-3 group cursor-pointer hover:shadow-lg transition-all duration-300">
-           <div className="flex items-center gap-6 p-8 rounded-[32px] group-hover:bg-slate-50 transition-colors">
-              <div className="p-6 rounded-[24px] bg-amber-50 text-amber-600 transition-transform duration-500 group-hover:scale-110">
-                <TrendingUp className="h-8 w-8" />
+         <Card className="border-none shadow-sm rounded-[28px] overflow-hidden bg-white p-2 group cursor-pointer hover:shadow-lg transition-all duration-300">
+           <div className="flex items-center gap-4 p-5 rounded-[24px] group-hover:bg-slate-50 transition-colors">
+              <div className="p-4 rounded-[16px] bg-amber-50 text-amber-600 transition-transform duration-500 group-hover:scale-110">
+                <TrendingUp className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-2 text-tight">Cat. de Mayor Valor</p>
-                <div className="flex items-baseline gap-3">
-                  <span className="text-4xl font-black text-slate-900 tracking-tighter truncate max-w-[200px] inline-block">{stats.bestCategory}</span>
-                  <span className="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-full">Líder</span>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cat. de Mayor Valor</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight truncate max-w-[200px] inline-block">{stats.bestCategory}</span>
+                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Líder</span>
                 </div>
               </div>
            </div>

@@ -44,7 +44,6 @@ const navigation = [
   { id: "quick-entries", name: "Entradas Rápidas", icon: TrendingUp },
   { id: "quick-exits", name: "Salidas Rápidas", icon: TrendingDown },
   { id: "customers", name: "Clientes", icon: Users },
-  { id: "settings", name: "Configuración", icon: Settings },
 ]
 
 export default function DashboardLayout({ children, activeTab, onTabChange }: DashboardLayoutProps) {
@@ -68,29 +67,29 @@ export default function DashboardLayout({ children, activeTab, onTabChange }: Da
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-[#f1f5f9] border-r border-gray-200">
       {/* Sidebar Header */}
-      <div className="p-8 pb-6">
-        <h1 className="text-4xl font-medium text-[#1e293b] tracking-tighter leading-none">
+      <div className="p-6 pb-4">
+        <h1 className="text-3xl font-medium text-[#1e293b] tracking-tighter leading-none">
           H2R
-          <span className="text-[#10b981]"> ERP</span><span className="text-lg"> v2.0</span>
+          <span className="text-[#10b981]"> ERP</span><span className="text-sm border ml-2 border-[#10b981]/30 bg-[#10b981]/10 text-[#10b981] px-2 py-0.5 rounded-full font-bold align-middle inline-block">v2.0</span>
         </h1>
       </div>
 
       {/* User Info */}
-      <div className="px-6 mb-8">
-        <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-          <Avatar className="h-14 w-14 border-2 border-[#10b981]">
+      <div className="px-4 mb-6">
+        <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <Avatar className="h-11 w-11 border-2 border-[#10b981]">
             <AvatarImage src="" />
-            <AvatarFallback className="bg-[#10b981] text-white font-medium text-lg">JH</AvatarFallback>
+            <AvatarFallback className="bg-[#10b981] text-white font-medium text-sm">JH</AvatarFallback>
           </Avatar>
           <div className="flex flex-col min-w-0">
-            <span className="text-[18px] font-medium text-slate-900 truncate tracking-tight">Jorge Herrera</span>
-            <span className="text-[13px] font-medium text-slate-400 uppercase tracking-widest leading-none mt-1.5">Gerente General</span>
+            <span className="text-[15px] font-medium text-slate-900 truncate tracking-tight">Jorge Herrera</span>
+            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Gerente General</span>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-6 space-y-1.5 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
         {navigation.map((item) => {
           const Icon = item.icon
           const isActive = activeTab === item.id
@@ -102,13 +101,13 @@ export default function DashboardLayout({ children, activeTab, onTabChange }: Da
                 setSidebarOpen(false)
               }}
               className={cn(
-                "group flex w-full items-center rounded-2xl px-5 py-4 text-[17px] font-medium transition-all duration-300",
+                "group flex w-full items-center rounded-[14px] px-4 py-3 text-[15px] font-medium transition-all duration-300",
                 isActive
-                  ? "bg-[#10b981] text-white shadow-lg shadow-emerald-100/50"
+                  ? "bg-[#10b981] text-white shadow-md shadow-emerald-100/50"
                   : "text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm",
               )}
             >
-              <Icon className={cn("mr-4 h-[24px] w-[24px] transition-colors", isActive ? "text-white" : "text-slate-400 group-hover:text-[#10b981]")} />
+              <Icon className={cn("mr-3 h-[20px] w-[20px] transition-colors", isActive ? "text-white" : "text-slate-400 group-hover:text-[#10b981]")} />
               <span className="tracking-tight">{item.name}</span>
             </button>
           )
@@ -116,19 +115,19 @@ export default function DashboardLayout({ children, activeTab, onTabChange }: Da
       </nav>
 
       {/* Footer Nav */}
-      <div className="p-6 space-y-1.5 mt-auto border-t border-slate-200/50">
+      <div className="p-4 space-y-1 mt-auto border-t border-slate-200/50">
         <button
           onClick={() => onTabChange("settings")}
-          className="flex w-full items-center rounded-2xl px-5 py-3.5 text-[16px] font-medium text-slate-500 hover:bg-white transition-all group"
+          className="flex w-full items-center rounded-[14px] px-4 py-3 text-[15px] font-medium text-slate-500 hover:bg-white transition-all group"
         >
-          <Settings className="mr-4 h-[22px] w-[22px] text-slate-400 group-hover:text-[#10b981] transition-colors" />
+          <Settings className="mr-3 h-[20px] w-[20px] text-slate-400 group-hover:text-[#10b981] transition-colors" />
           Configuración
         </button>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center rounded-2xl px-5 py-3.5 text-[16px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
+          className="flex w-full items-center rounded-[14px] px-4 py-3 text-[15px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
         >
-          <LogOut className="mr-4 h-[22px] w-[22px] text-slate-400 group-hover:text-rose-600 transition-colors" />
+          <LogOut className="mr-3 h-[20px] w-[20px] text-slate-400 group-hover:text-rose-600 transition-colors" />
           Cerrar Sesión
         </button>
       </div>
@@ -151,12 +150,12 @@ export default function DashboardLayout({ children, activeTab, onTabChange }: Da
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:fixed lg:inset-y-0">
+      <div className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:inset-y-0">
          <SidebarContent />
       </div>
 
       {/* Main Column */}
-      <div className="flex flex-1 flex-col lg:pl-80 min-w-0">
+      <div className="flex flex-1 flex-col lg:pl-72 min-w-0">
         {/* Mobile Menu Trigger (Floating) */}
         <div className="lg:hidden fixed top-4 left-4 z-50">
           <Button variant="outline" size="icon" className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border-slate-200" onClick={() => setSidebarOpen(true)}>
