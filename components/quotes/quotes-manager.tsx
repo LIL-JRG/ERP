@@ -807,11 +807,11 @@ export default function QuotesManager() {
                     <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Vencimiento de Oferta</Label>
                     <div className="relative group">
                       <Calendar className="absolute left-6 top-1/2 transform -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors h-5 w-5" />
-                      <Input
+                       <Input
                         type="date"
                         value={validUntil}
                         onChange={(e) => setValidUntil(e.target.value)}
-                        className="h-16 pl-14 rounded-2xl border-none bg-slate-50 font-black text-slate-900 focus-visible:ring-2 focus-visible:ring-emerald-500"
+                        className="h-12 pl-12 rounded-xl border-none bg-slate-50 font-black text-slate-900 focus-visible:ring-2 focus-visible:ring-emerald-500"
                       />
                     </div>
                   </div>
@@ -830,11 +830,11 @@ export default function QuotesManager() {
 
             {/* Sidebar de Resumen Sticky */}
             <div className="lg:sticky lg:top-8 space-y-6">
-              <Card className="rounded-[40px] border-none shadow-2xl bg-slate-900 text-white overflow-hidden">
-                <div className="p-10 space-y-8">
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500">Liquidación Proyectada</p>
-                    <h3 className="text-4xl font-black italic tracking-tighter leading-none">Checkout<span className="text-emerald-500">.</span></h3>
+               <Card className="rounded-3xl border-none shadow-xl bg-slate-900 text-white overflow-hidden">
+                <div className="p-6 md:p-8 space-y-6">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Liquidación Proyectada</p>
+                    <h3 className="text-3xl font-black italic tracking-tighter leading-none">Checkout<span className="text-emerald-500">.</span></h3>
                   </div>
 
                   <div className="space-y-4 pt-4 border-t border-white/10">
@@ -860,27 +860,27 @@ export default function QuotesManager() {
                       </div>
                     )}
 
-                    <div className="pt-8 mt-4 border-t border-white/10">
-                      <p className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-500 mb-2">Neto Sugerido</p>
-                      <div className="text-6xl font-black italic tracking-tighter text-emerald-500 leading-none">
+                    <div className="pt-6 mt-4 border-t border-white/10">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-2">Neto Sugerido</p>
+                      <div className="text-4xl md:text-5xl font-black italic tracking-tighter text-emerald-500 leading-none">
                         {formatCurrency(calculateTotal())}
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4 pt-10">
+                  <div className="space-y-3 pt-6">
                     <Button 
                       onClick={handleCreateQuote}
                       disabled={newQuoteItems.length === 0}
-                      className="w-full h-20 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-sm shadow-xl shadow-emerald-500/20 group transition-all"
+                      className="w-full h-14 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-emerald-500/20 group transition-all"
                     >
-                      <FileText className="h-5 w-5 mr-3 group-hover:scale-110 transition-transform" />
+                      <FileText className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
                       Emitir Presupuesto
                     </Button>
                     <Button 
                       variant="ghost" 
                       onClick={resetForm}
-                      className="w-full h-14 rounded-2xl border border-white/10 text-white/50 hover:bg-white/5 hover:text-white font-black uppercase tracking-widest text-[10px]"
+                      className="w-full h-11 rounded-xl border border-white/10 text-white/50 hover:bg-white/5 hover:text-white font-black uppercase tracking-widest text-[9px]"
                     >
                       Abortar Operación
                     </Button>
@@ -900,7 +900,7 @@ export default function QuotesManager() {
               </Card>
 
               {/* Tips de Cotización */}
-              <div className="bg-emerald-50 rounded-[32px] p-8 border border-emerald-100 flex items-start gap-4">
+               <div className="bg-emerald-50 rounded-3xl p-6 border border-emerald-100 flex items-start gap-4">
                 <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shrink-0">
                   <TrendingUp className="h-5 w-5" />
                 </div>
@@ -916,69 +916,71 @@ export default function QuotesManager() {
 
       {/* Diálogo para ver/imprimir cotización Big UI */}
       <Dialog open={isViewQuoteDialogOpen} onOpenChange={setIsViewQuoteDialogOpen}>
-        <DialogContent className="max-w-5xl rounded-[44px] border-none shadow-2xl p-10 overflow-hidden bg-white">
-          <DialogHeader className="mb-8">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none mb-2">
-                  Cotización #{selectedQuote?.quote_number}
-                </DialogTitle>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Documento Proyectado / Portafolio</p>
+        <DialogContent className="max-w-5xl rounded-3xl border-none shadow-2xl p-0 overflow-hidden bg-white">
+          <div className="bg-[#fff] p-6 md:p-8">
+            <DialogHeader className="mb-8">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter italic leading-none mb-1">
+                    Cotización #{selectedQuote?.quote_number}
+                  </DialogTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Documento Proyectado / Portafolio</p>
+                  </div>
                 </div>
+                {selectedQuote && getStatusBadge(selectedQuote.status)}
               </div>
-              {selectedQuote && getStatusBadge(selectedQuote.status)}
-            </div>
-          </DialogHeader>
-          
-          {selectedQuote && (
-            <div className="space-y-8 animate-in zoom-in-95 focus-in duration-500">
-              <div className="bg-slate-50 rounded-[40px] p-1 border border-slate-100/50 shadow-inner">
-                 <div className="bg-white rounded-[39px] p-10 shadow-sm min-h-[500px]">
-                    {renderQuoteDocument(selectedQuote)}
-                 </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-4 border-t border-slate-50">
-                <div className="flex items-center gap-4">
-                  {selectedQuote.status === "pendiente" && (
-                    <>
-                      <Button 
-                        onClick={() => handleConvertToSale(selectedQuote)} 
-                        className="h-16 px-10 rounded-2xl bg-slate-900 hover:bg-emerald-500 text-white font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-slate-900/10 group"
-                      >
-                        <ArrowRight className="h-5 w-5 mr-3 group-hover:translate-x-1 transition-transform" />
-                        Formalizar a Venta
-                      </Button>
-                      <Button 
-                        onClick={() => handleCancelQuote(selectedQuote)} 
-                        variant="ghost" 
-                        className="h-16 px-8 rounded-2xl text-rose-500 hover:bg-rose-50 font-black uppercase tracking-widest text-xs"
-                      >
-                        Descartar Oferta
-                      </Button>
-                    </>
-                  )}
+            </DialogHeader>
+            
+            {selectedQuote && (
+              <div className="space-y-8 animate-in zoom-in-95 focus-in duration-500">
+                <div className="bg-slate-50 rounded-3xl p-1 border border-slate-100/50 shadow-inner">
+                   <div className="bg-white rounded-[23px] p-6 md:p-8 shadow-sm min-h-[500px]">
+                      {renderQuoteDocument(selectedQuote)}
+                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <PrintableDocument
-                    title={`Cotización #${selectedQuote.quote_number}`}
-                    content={renderQuoteDocument(selectedQuote)}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsViewQuoteDialogOpen(false)}
-                    className="h-16 w-16 rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
-                  >
-                    <X className="h-6 w-6" />
-                  </Button>
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-4 border-t border-slate-50">
+                  <div className="flex items-center gap-4">
+                    {selectedQuote.status === "pendiente" && (
+                      <>
+                        <Button 
+                          onClick={() => handleConvertToSale(selectedQuote)} 
+                          className="h-14 px-8 rounded-xl bg-slate-900 hover:bg-emerald-500 text-white font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-slate-900/10 group"
+                        >
+                          <ArrowRight className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
+                          Formalizar a Venta
+                        </Button>
+                        <Button 
+                          onClick={() => handleCancelQuote(selectedQuote)} 
+                          variant="ghost" 
+                          className="h-16 px-8 rounded-2xl text-rose-500 hover:bg-rose-50 font-black uppercase tracking-widest text-xs"
+                        >
+                          Descartar Oferta
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <PrintableDocument
+                      title={`Cotización #${selectedQuote.quote_number}`}
+                      content={renderQuoteDocument(selectedQuote)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsViewQuoteDialogOpen(false)}
+                      className="h-14 w-14 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

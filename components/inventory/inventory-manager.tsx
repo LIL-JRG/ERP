@@ -451,17 +451,17 @@ export default function InventoryManager() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div className="relative">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 h-6 w-6" />
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
                 <Input
                   placeholder="Escribre el nombre del ítem para auditar stock..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-16 h-16 bg-white border-none rounded-[32px] text-lg font-bold shadow-sm placeholder:text-slate-300"
+                  className="pl-14 h-12 bg-white border-none rounded-2xl text-base font-bold shadow-sm placeholder:text-slate-300"
                 />
               </div>
 
               {outOfStockProducts.length > 0 && (
-                <Card className="border-none bg-rose-50 rounded-[40px] p-8 shadow-sm animate-in fade-in slide-in-from-left-4">
+                <Card className="border-none bg-rose-50 rounded-3xl p-6 shadow-sm animate-in fade-in slide-in-from-left-4">
                   <div className="flex items-start gap-6">
                     <div className="p-4 bg-white rounded-2xl shadow-sm text-rose-500">
                       <TrendingDown className="h-8 w-8" />
@@ -484,7 +484,7 @@ export default function InventoryManager() {
               )}
 
               {lowStockProducts.length > 0 && outOfStockProducts.length === 0 && (
-                <Card className="border-none bg-orange-50 rounded-[40px] p-8 shadow-sm animate-in fade-in slide-in-from-left-4">
+                <Card className="border-none bg-orange-50 rounded-3xl p-6 shadow-sm animate-in fade-in slide-in-from-left-4">
                   <div className="flex items-start gap-6">
                     <div className="p-4 bg-white rounded-2xl shadow-sm text-orange-500">
                       <TrendingDown className="h-8 w-8" />
@@ -507,7 +507,7 @@ export default function InventoryManager() {
               )}
             </div>
 
-            <Card className="border-none shadow-sm rounded-[40px] bg-white p-8">
+            <Card className="border-none shadow-sm rounded-3xl bg-white p-6">
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-6 flex items-center gap-3">
                 <div className="w-2 h-8 bg-emerald-500 rounded-full" />
                 Composicion de Inventario
@@ -543,44 +543,44 @@ export default function InventoryManager() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-slate-50 hover:bg-transparent">
-                    <TableHead className="h-16 px-8 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Producto / Ítem</TableHead>
-                    <TableHead className="h-16 hidden sm:table-cell text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Marca / Categoría</TableHead>
-                    <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Existencia</TableHead>
-                    <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">S. Mínimo</TableHead>
-                    <TableHead className="h-16 text-right px-8 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Estatus</TableHead>
+                    <TableHead className="h-12 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Producto / Ítem</TableHead>
+                    <TableHead className="h-12 hidden sm:table-cell text-[10px] font-black text-slate-400 uppercase tracking-widest">Marca / Categoría</TableHead>
+                    <TableHead className="h-12 text-[10px] font-black text-slate-400 uppercase tracking-widest">Existencia</TableHead>
+                    <TableHead className="h-12 text-[10px] font-black text-slate-400 uppercase tracking-widest">S. Mínimo</TableHead>
+                    <TableHead className="h-12 text-right px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estatus</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredProducts.map((product) => (
                     <TableRow key={product.id} className="group border-slate-50 hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="px-8 py-8">
+                      <TableCell className="px-6 py-4">
                         <div>
-                          <div className="text-2xl font-black text-slate-900 group-hover:text-emerald-500 transition-colors tracking-tight">{product.name}</div>
-                          {product.barcode && <div className="text-[10px] font-mono font-black text-slate-400 uppercase tracking-widest">{product.barcode}</div>}
+                          <div className="text-lg font-black text-slate-900 group-hover:text-emerald-500 transition-colors tracking-tight">{product.name}</div>
+                          {product.barcode && <div className="text-[9px] font-mono font-black text-slate-400 uppercase tracking-widest">{product.barcode}</div>}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell py-8">
+                      <TableCell className="hidden sm:table-cell py-4">
                         <div className="flex flex-col">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">M: {product.brand || "GENÉRICA"}</span>
                           <span className="text-xs font-bold text-slate-900 uppercase italic tracking-tight">{product.category || "SIN CAT."}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-8">
+                      <TableCell className="py-4">
                         <div className={cn(
-                          "inline-flex flex-col items-center justify-center min-w-[72px] h-[72px] rounded-[24px]",
+                          "inline-flex flex-col items-center justify-center min-w-[54px] h-[54px] rounded-xl",
                           product.stock_quantity === 0 ? "bg-rose-50 text-rose-600 shadow-sm" : 
                           product.stock_quantity <= product.min_stock ? "bg-orange-50 text-orange-600" : "bg-emerald-50 text-emerald-600"
                         )}>
-                          <span className="text-2xl font-black tracking-tighter italic">{product.stock_quantity}</span>
-                          <span className="text-[9px] font-black uppercase opacity-60">uds</span>
+                          <span className="text-lg font-black tracking-tighter italic">{product.stock_quantity}</span>
+                          <span className="text-[8px] font-black uppercase opacity-60">uds</span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-8">
-                        <div className="text-lg font-black text-slate-300 italic tracking-tighter">
+                      <TableCell className="py-4">
+                        <div className="text-base font-black text-slate-300 italic tracking-tighter">
                           MT: {product.min_stock}
                         </div>
                       </TableCell>
-                      <TableCell className="py-8 text-right px-8">
+                      <TableCell className="py-4 text-right px-6">
                         {product.stock_quantity === 0 ? (
                           <Badge className="bg-rose-500 text-white border-none font-black px-6 py-2 rounded-2xl uppercase text-[10px] tracking-widest shadow-lg shadow-rose-100 italic">AGOTADO</Badge>
                         ) : product.stock_quantity <= product.min_stock ? (

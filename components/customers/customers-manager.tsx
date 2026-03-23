@@ -298,18 +298,18 @@ export default function CustomersManager() {
             <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
               <Plus className="h-7 w-7" />
             </div>
-            <Badge className="bg-blue-50 text-blue-600 border-none font-black px-3 py-1 rounded-full uppercase text-[10px] tracking-widest italic">Crecimiento</Badge>
+            <Badge className="bg-blue-50 text-blue-600 border-none font-black px-3 py-1 rounded-full uppercase text-[9px] tracking-widest italic">Crecimiento</Badge>
           </div>
-          <div className="space-y-1">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Nuevos (Mes {new Date().toLocaleString('es', { month: 'short' })})</p>
-            <h3 className="text-4xl font-black text-blue-600 tracking-tighter italic">
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Nuevos (Mes {new Date().toLocaleString('es', { month: 'short' })})</p>
+            <h3 className="text-3xl font-black text-blue-600 tracking-tighter italic">
               {
                 customers.filter((c) => {
                   const customerDate = new Date(c.created_at)
                   const now = new Date()
                   return customerDate.getMonth() === now.getMonth() && customerDate.getFullYear() === now.getFullYear()
                 }).length
-              } <span className="text-lg text-blue-200">altas</span>
+              } <span className="text-sm text-blue-200">altas</span>
             </h3>
           </div>
         </Card>
@@ -318,14 +318,14 @@ export default function CustomersManager() {
       {/* Header Búsqueda con Estilo Masivo */}
       <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
         <div className="relative w-full md:w-[400px] group">
-          <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
-            <Search className="h-6 w-6 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+          <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
           </div>
           <Input
-            placeholder="BUSCAR POR NOMBRE, EMAIL O TEL..."
+            placeholder="BUSCAR CLIENTE..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="h-16 pl-16 rounded-[24px] border-none bg-white shadow-sm font-black text-sm uppercase tracking-widest placeholder:text-slate-300 focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all text-slate-900"
+            className="h-12 pl-12 rounded-xl border-none bg-white shadow-sm font-black text-xs uppercase tracking-widest placeholder:text-slate-300 focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all text-slate-900"
           />
         </div>
         <div className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] italic pr-4">
@@ -334,17 +334,17 @@ export default function CustomersManager() {
       </div>
 
       {/* Tabla de Clientes Big UI */}
-      <div className="bg-white rounded-[44px] shadow-sm overflow-hidden p-4 border border-slate-50 animate-in slide-in-from-bottom-6 duration-700">
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden p-2 border border-slate-50 animate-in slide-in-from-bottom-6 duration-700">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-slate-50 hover:bg-transparent">
-                <TableHead className="h-20 px-8 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">IDENTIDAD / CLIENTE</TableHead>
-                <TableHead className="h-20 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden sm:table-cell">CONTACTO DIRECTO</TableHead>
-                <TableHead className="h-20 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden md:table-cell">UBICACIÓN GEOGRÁFICA</TableHead>
-                <TableHead className="h-20 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">BENEFICIO (%)</TableHead>
-                <TableHead className="h-20 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden lg:table-cell">ALTA SISTEMA</TableHead>
-                <TableHead className="h-20 px-8 text-right text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">ACCIONES</TableHead>
+                <TableHead className="h-14 px-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">IDENTIDAD / CLIENTE</TableHead>
+                <TableHead className="h-14 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hidden sm:table-cell">CONTACTO DIRECTO</TableHead>
+                <TableHead className="h-14 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hidden md:table-cell">UBICACIÓN</TableHead>
+                <TableHead className="h-14 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">BENEFICIO</TableHead>
+                <TableHead className="h-14 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hidden lg:table-cell">ALTA</TableHead>
+                <TableHead className="h-14 px-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">ACCIONES</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -357,77 +357,77 @@ export default function CustomersManager() {
               ) : (
                 filteredCustomers.map((customer) => (
                   <TableRow key={customer.id} className="group border-slate-50 hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="px-8 py-8">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black text-lg italic shadow-lg shadow-slate-900/10">
+                    <TableCell className="px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-base italic shadow-lg shadow-slate-900/10">
                           {customer.name.charAt(0)}
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-xl font-black text-slate-900 uppercase tracking-tight">{customer.name}</span>
-                          <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic leading-none">ID: {customer.id.split('-')[0]}</span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-base font-black text-slate-900 uppercase tracking-tight">{customer.name}</span>
+                          <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic leading-none">ID: {customer.id.split('-')[0]}</span>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="py-8 hidden sm:table-cell">
-                      <div className="flex flex-col gap-2">
+                    <TableCell className="py-5 hidden sm:table-cell">
+                      <div className="flex flex-col gap-1">
                         {customer.email && (
-                          <div className="flex items-center text-xs font-bold text-slate-500 lowercase tracking-tight">
-                            <Mail className="h-3.5 w-3.5 mr-2 text-slate-300" />
+                          <div className="flex items-center text-[11px] font-bold text-slate-500 lowercase tracking-tight">
+                            <Mail className="h-3 w-3 mr-1.5 text-slate-300" />
                             {customer.email}
                           </div>
                         )}
                         {customer.phone && (
-                          <div className="flex items-center text-xs font-black text-slate-900 uppercase tracking-widest">
-                            <Phone className="h-3.5 w-3.5 mr-2 text-emerald-500" />
+                          <div className="flex items-center text-[11px] font-black text-slate-900 uppercase tracking-widest">
+                            <Phone className="h-3 w-3 mr-1.5 text-emerald-500" />
                             {customer.phone}
                           </div>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="py-8 hidden md:table-cell">
-                      <div className="max-w-xs text-xs font-bold text-slate-400 uppercase leading-snug tracking-tight italic" title={customer.address || ""}>
-                        {customer.address || "UBICACIÓN SIN DEFINIR"}
+                    <TableCell className="py-5 hidden md:table-cell">
+                      <div className="max-w-[200px] text-[10px] font-bold text-slate-400 uppercase leading-snug tracking-tight italic truncate" title={customer.address || ""}>
+                        {customer.address || "SIN DEFINIR"}
                       </div>
                     </TableCell>
-                    <TableCell className="py-8">
+                    <TableCell className="py-5">
                       {customer.discount_percentage > 0 ? (
-                        <div className="flex flex-col gap-1">
-                          <Badge className="bg-emerald-50 text-emerald-600 border-none font-black px-3 py-1 rounded-lg uppercase text-[9px] tracking-widest italic w-fit">
-                            VALOR PREFERENCIAL
+                        <div className="flex flex-col gap-0.5">
+                          <Badge className="bg-emerald-50 text-emerald-600 border-none font-black px-2 py-0.5 rounded-md uppercase text-[8px] tracking-widest italic w-fit">
+                            VIP
                           </Badge>
-                          <span className="text-2xl font-black text-emerald-600 tracking-tighter italic">-{customer.discount_percentage}%</span>
+                          <span className="text-lg font-black text-emerald-600 tracking-tighter italic">-{customer.discount_percentage}%</span>
                         </div>
                       ) : (
-                        <Badge className="bg-slate-50 text-slate-400 border-none font-black px-3 py-1 rounded-lg uppercase text-[9px] tracking-widest italic">
-                          TARIFA ESTÁNDAR
+                        <Badge className="bg-slate-50 text-slate-400 border-none font-black px-2 py-0.5 rounded-md uppercase text-[8px] tracking-widest italic">
+                          ESTÁNDAR
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="py-8 hidden lg:table-cell text-xs font-black text-slate-300 uppercase tracking-widest italic">
+                    <TableCell className="py-5 hidden lg:table-cell text-[10px] font-black text-slate-300 uppercase tracking-widest italic">
                       {new Date(customer.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' })}
                     </TableCell>
-                    <TableCell className="px-8 py-8 text-right">
-                      <div className="flex justify-end gap-3">
+                    <TableCell className="px-6 py-5 text-right">
+                      <div className="flex justify-end gap-2">
                         <Button 
                           variant="ghost" 
                           onClick={() => handleViewCustomer(customer)}
-                          className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 hover:bg-slate-900 hover:text-white transition-all p-0"
+                          className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 hover:bg-slate-900 hover:text-white transition-all p-0"
                         >
-                          <Eye className="h-5 w-5" />
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           onClick={() => handleEdit(customer)}
-                          className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 hover:bg-emerald-500 hover:text-white transition-all p-0"
+                          className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 hover:bg-emerald-500 hover:text-white transition-all p-0"
                         >
-                          <Edit className="h-5 w-5" />
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           onClick={() => handleDelete(customer.id)}
-                          className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all p-0"
+                          className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all p-0"
                         >
-                          <Trash2 className="h-5 w-5" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

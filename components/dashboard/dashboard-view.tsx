@@ -182,7 +182,7 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
   }, [fetchStats])
 
   return (
-    <div className="p-6 lg:p-10 space-y-7 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Page Header */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2 mt-2">
@@ -190,10 +190,10 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
              <LayoutDashboard className="h-5 w-5" />
              PANEL DE CONTROL
            </div>
-           <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-none">
+           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter leading-none">
              Dashboard General
            </h1>
-           <p className="text-xl font-bold text-slate-400">
+           <p className="text-sm md:text-base font-bold text-slate-400">
              Resumen global y análisis de rendimiento operativo de hoy.
            </p>
         </div>
@@ -310,8 +310,8 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
       {/* Main Analysis Section */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 md:gap-6">
         <div className="xl:col-span-3">
-          <Card className="border-none shadow-sm rounded-[32px] overflow-hidden bg-white">
-            <CardContent className="p-6 lg:p-8">
+          <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
+            <CardContent className="p-4 md:p-6 lg:p-8">
                <DashboardChart onDataUpdate={fetchStats} />
             </CardContent>
           </Card>
@@ -323,46 +323,46 @@ export default function DashboardView({ onDataUpdate }: DashboardViewProps) {
 
       {/* Row of Horizontal Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 pb-12 mt-6">
-         <Card className="border-none shadow-sm rounded-[28px] overflow-hidden bg-white p-2 group cursor-pointer hover:shadow-lg transition-all duration-300">
-           <div className="flex items-center gap-4 p-5 rounded-[24px] group-hover:bg-slate-50 transition-colors">
-              <div className="p-4 rounded-[16px] bg-emerald-50 text-emerald-600 transition-transform duration-500 group-hover:scale-110">
-                <Package className="h-6 w-6" />
+         <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white p-1.5 group cursor-pointer hover:shadow-lg transition-all duration-300">
+           <div className="flex items-center gap-3 p-4 rounded-2xl group-hover:bg-slate-50 transition-colors">
+              <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-600 transition-transform duration-500 group-hover:scale-110">
+                <Package className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ítems Totales del Catálogo</p>
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{stats.totalProducts.toLocaleString()}</span>
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Sincronizado</span>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ítems del Catálogo</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{stats.totalProducts.toLocaleString()}</span>
+                  <span className="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">OK</span>
                 </div>
               </div>
            </div>
          </Card>
 
-         <Card className="border-none shadow-sm rounded-[28px] overflow-hidden bg-white p-2 group cursor-pointer hover:shadow-lg transition-all duration-300">
-           <div className="flex items-center gap-4 p-5 rounded-[24px] group-hover:bg-slate-50 transition-colors">
-              <div className="p-4 rounded-[16px] bg-blue-50 text-blue-600 transition-transform duration-500 group-hover:scale-110">
-                <Users className="h-6 w-6" />
+         <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white p-1.5 group cursor-pointer hover:shadow-lg transition-all duration-300">
+           <div className="flex items-center gap-3 p-4 rounded-2xl group-hover:bg-slate-50 transition-colors">
+              <div className="p-3.5 rounded-xl bg-blue-50 text-blue-600 transition-transform duration-500 group-hover:scale-110">
+                <Users className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Base de Clientes Activos</p>
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{stats.totalCustomers.toLocaleString()}</span>
-                  <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Registrados</span>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Base de Clientes</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{stats.totalCustomers.toLocaleString()}</span>
+                  <span className="text-[8px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">ACTIVOS</span>
                 </div>
               </div>
            </div>
          </Card>
 
-         <Card className="border-none shadow-sm rounded-[28px] overflow-hidden bg-white p-2 group cursor-pointer hover:shadow-lg transition-all duration-300">
-           <div className="flex items-center gap-4 p-5 rounded-[24px] group-hover:bg-slate-50 transition-colors">
-              <div className="p-4 rounded-[16px] bg-amber-50 text-amber-600 transition-transform duration-500 group-hover:scale-110">
-                <TrendingUp className="h-6 w-6" />
+         <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white p-1.5 group cursor-pointer hover:shadow-lg transition-all duration-300">
+           <div className="flex items-center gap-3 p-4 rounded-2xl group-hover:bg-slate-50 transition-colors">
+              <div className="p-3.5 rounded-xl bg-amber-50 text-amber-600 transition-transform duration-500 group-hover:scale-110">
+                <TrendingUp className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cat. de Mayor Valor</p>
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight truncate max-w-[200px] inline-block">{stats.bestCategory}</span>
-                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Líder</span>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Top Categoría</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl md:text-2xl font-black text-slate-900 tracking-tight truncate max-w-[150px] inline-block">{stats.bestCategory}</span>
+                  <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">LÍDER</span>
                 </div>
               </div>
            </div>

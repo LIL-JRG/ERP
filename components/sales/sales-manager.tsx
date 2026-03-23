@@ -997,12 +997,12 @@ export default function SalesManager() {
 
             {/* Sticky Sidebar Cart/Payment */}
             <div className="space-y-8 xl:sticky xl:top-6 animate-in slide-in-from-right-10 duration-700">
-              <Card className="rounded-[44px] border-none shadow-2xl bg-white p-10 overflow-hidden relative">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-[100px]" />
-                
-                <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic mb-8 flex items-center gap-3">
-                  Resumen <span className="text-emerald-500">Caja.</span>
-                </h3>
+               <Card className="rounded-3xl border-none shadow-xl bg-white p-6 md:p-8 overflow-hidden relative">
+                 <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-[80px]" />
+                 
+                 <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic mb-6 flex items-center gap-3">
+                   Resumen <span className="text-emerald-500">Caja.</span>
+                 </h3>
 
                 <div className="space-y-6 mb-10">
                   <div className="flex justify-between items-center text-sm font-black text-slate-400 uppercase tracking-widest">
@@ -1021,9 +1021,9 @@ export default function SalesManager() {
                       <span>{formatCurrency(calculateSaleTax())}</span>
                     </div>
                   )}
-                  <div className="pt-6 border-t border-slate-100">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Monto Neto a Liquidar</p>
-                    <div className="text-6xl font-black text-slate-900 tracking-tighter italic">
+                  <div className="pt-5 border-t border-slate-100">
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Monto Neto a Liquidar</p>
+                    <div className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter italic">
                       {formatCurrency(calculateTotal())}
                     </div>
                   </div>
@@ -1066,9 +1066,9 @@ export default function SalesManager() {
                       </div>
                     </div>
 
-                    <div className="p-8 rounded-[32px] bg-slate-50 border border-slate-100 space-y-6">
-                      <div className="space-y-3 text-center">
-                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                    <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-4">
+                      <div className="space-y-2 text-center">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                           {paymentMethod === "efectivo" ? "Monto Recibido" : "Confirmacion Monto"}
                         </Label>
                         <Input
@@ -1077,23 +1077,23 @@ export default function SalesManager() {
                           placeholder="0.00"
                           value={amountPaid}
                           onChange={(e) => setAmountPaid(e.target.value)}
-                          className="h-20 text-4xl font-black text-center border-none bg-white rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-emerald-500 text-slate-900"
+                          className="h-14 text-3xl font-black text-center border-none bg-white rounded-xl shadow-sm focus-visible:ring-2 focus-visible:ring-emerald-500 text-slate-900"
                         />
                       </div>
 
                       {paymentMethod === "efectivo" && amountPaid && (
                         <div className={cn(
-                          "p-6 rounded-2xl border-2 text-center transition-all animate-bounce-subtle",
+                          "p-4 rounded-xl border-2 text-center transition-all animate-bounce-subtle",
                           calculateChange() >= 0 ? "bg-emerald-50 border-emerald-500/20" : "bg-rose-50 border-rose-500/20 shadow-none animate-none"
                         )}>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Cambio a Entregar</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Cambio a Entregar</p>
                           <p className={cn(
-                            "text-4xl font-black italic tracking-tighter",
+                            "text-3xl font-black italic tracking-tighter",
                             calculateChange() >= 0 ? "text-emerald-600" : "text-rose-600"
                           )}>
                             {formatCurrency(calculateChange())}
                           </p>
-                          {calculateChange() < 0 && <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest mt-1 block">⚠️ Fondo Insuficiente</span>}
+                          {calculateChange() < 0 && <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest mt-1 block">⚠️ Fondo Insuficiente</span>}
                         </div>
                       )}
                     </div>
@@ -1101,21 +1101,21 @@ export default function SalesManager() {
                 )}
 
                 <div className="mt-10 space-y-4">
-                  <Button
-                    onClick={handleCreateSale}
-                    disabled={newSaleItems.length === 0}
-                    className="w-full h-24 rounded-[32px] bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 active:scale-[0.98] transition-all group"
-                  >
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-black uppercase tracking-[0.3em] mb-1 group-hover:tracking-[0.4em] transition-all">Consolidar Operacion</span>
-                      <div className="flex items-center gap-3">
-                        <ShoppingCart className="h-6 w-6" />
-                        <span className="text-xl font-black italic tracking-tight">
-                          {saleType === "credito" ? "Autorizar Credito" : "Completar Venta"}
-                        </span>
-                      </div>
-                    </div>
-                  </Button>
+                   <Button
+                     onClick={handleCreateSale}
+                     disabled={newSaleItems.length === 0}
+                     className="w-full h-16 md:h-20 rounded-3xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all group"
+                   >
+                     <div className="flex flex-col items-center">
+                       <span className="text-[9px] font-black uppercase tracking-[0.2em] mb-1 group-hover:tracking-[0.3em] transition-all">Consolidar Operacion</span>
+                       <div className="flex items-center gap-2">
+                         <ShoppingCart className="h-5 w-5" />
+                         <span className="text-lg font-black italic tracking-tight">
+                           {saleType === "credito" ? "Autorizar Credito" : "Completar Venta"}
+                         </span>
+                       </div>
+                     </div>
+                   </Button>
                   <Button 
                     variant="ghost" 
                     onClick={resetForm} 
@@ -1143,13 +1143,13 @@ export default function SalesManager() {
 
       {/* Diálogo para ver/imprimir venta - BIG UI Redesign */}
       <Dialog open={isViewSaleDialogOpen} onOpenChange={setIsViewSaleDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto rounded-[44px] border-none shadow-2xl p-0 overflow-hidden">
-          <div className="bg-[#f8fafc] p-10 space-y-10">
-            <DialogHeader>
-              <div className="flex justify-between items-center mb-6">
-                <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter">
-                  Comprobante <span className="text-emerald-500 italic">#{selectedSale?.sale_number}</span>
-                </DialogTitle>
+         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto rounded-3xl border-none shadow-2xl p-0 overflow-hidden">
+           <div className="bg-[#f8fafc] p-6 md:p-8 space-y-8">
+             <DialogHeader>
+               <div className="flex justify-between items-center mb-4">
+                 <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter">
+                   Comprobante <span className="text-emerald-500 italic">#{selectedSale?.sale_number}</span>
+                 </DialogTitle>
                 <Badge className={cn(
                   "font-black px-4 py-2 rounded-xl uppercase text-[10px] tracking-widest italic border-none shadow-sm",
                   selectedSale?.status === "completada" ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"

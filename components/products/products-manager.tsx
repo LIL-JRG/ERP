@@ -1006,26 +1006,26 @@ export default function ProductsManager() {
           </Select>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={exportToCSV} className="h-16 rounded-[24px] border-none bg-emerald-50 text-emerald-600 font-bold hover:bg-emerald-100 px-6 transition-all">
-              <Download className="h-6 w-6 sm:mr-2" />
-              <span className="hidden sm:inline">Exportar</span>
+            <Button variant="outline" onClick={exportToCSV} className="h-12 rounded-xl border-none bg-emerald-50 text-emerald-600 font-bold hover:bg-emerald-100 px-5 transition-all">
+              <Download className="h-5 w-5 sm:mr-2" />
+              <span className="hidden sm:inline text-xs uppercase tracking-widest">Exportar</span>
             </Button>
-            <Button variant="outline" onClick={() => setIsImportDialogOpen(true)} className="h-16 rounded-[24px] border-none bg-slate-50 text-slate-500 font-bold hover:bg-slate-100 px-6 transition-all">
-              <Upload className="h-6 w-6 sm:mr-2" />
-              <span className="hidden sm:inline">Importar</span>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(true)} className="h-12 rounded-xl border-none bg-slate-50 text-slate-500 font-bold hover:bg-slate-100 px-5 transition-all">
+              <Upload className="h-5 w-5 sm:mr-2" />
+              <span className="hidden sm:inline text-xs uppercase tracking-widest">Importar</span>
             </Button>
           </div>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={resetForm} className="h-16 rounded-[28px] bg-[#10b981] hover:bg-[#059669] text-white font-black text-lg uppercase tracking-[0.2em] shadow-xl shadow-emerald-200 px-10 transition-all active:scale-95">
-                <Plus className="h-6 w-6 mr-2" />
+              <Button onClick={resetForm} className="h-12 md:h-14 rounded-2xl bg-[#10b981] hover:bg-[#059669] text-white font-black text-xs md:text-sm uppercase tracking-[0.2em] shadow-lg shadow-emerald-200 px-6 md:px-8 transition-all active:scale-95">
+                <Plus className="h-5 w-5 mr-2" />
                 Nuevo Producto
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl rounded-[44px] border-none shadow-2xl p-10 max-h-[90vh] overflow-y-auto">
-              <DialogHeader className="mb-8">
-                <DialogTitle className="text-5xl font-black text-slate-900 tracking-tighter">
+            <DialogContent className="max-w-4xl rounded-3xl border-none shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+              <DialogHeader className="mb-6">
+                <DialogTitle className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">
                   {editingProduct ? "Editar" : "Nuevo"} <span className="text-emerald-500">Producto.</span>
                 </DialogTitle>
               </DialogHeader>
@@ -1068,13 +1068,13 @@ export default function ProductsManager() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Precio Venta *</Label>
-                      <Input type="number" step="0.01" value={formData.public_price} onChange={(e) => setFormData({...formData, public_price: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl text-xl font-black text-emerald-600" required />
+                    <div className="space-y-2">
+                      <Label className="ml-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Precio Venta *</Label>
+                      <Input type="number" step="0.01" value={formData.public_price} onChange={(e) => setFormData({...formData, public_price: e.target.value})} className="h-12 bg-slate-50 border-none rounded-xl text-lg font-black text-emerald-600" required />
                     </div>
-                    <div className="space-y-3">
-                      <Label className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Precio Costo *</Label>
-                      <Input type="number" step="0.01" value={formData.wholesale_price} onChange={(e) => setFormData({...formData, wholesale_price: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl text-xl font-black text-blue-600" required />
+                    <div className="space-y-2">
+                      <Label className="ml-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Precio Costo *</Label>
+                      <Input type="number" step="0.01" value={formData.wholesale_price} onChange={(e) => setFormData({...formData, wholesale_price: e.target.value})} className="h-12 bg-slate-50 border-none rounded-xl text-lg font-black text-blue-600" required />
                     </div>
                   </div>
                 </div>
@@ -1113,44 +1113,44 @@ export default function ProductsManager() {
       </div>
 
       {/* Tabla de productos (Rediseñada) */}
-      <Card className="border-none shadow-sm rounded-[44px] overflow-hidden bg-white p-4">
+      <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-50 hover:bg-transparent">
-                  <TableHead className="h-16 px-8 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Producto</TableHead>
-                  <TableHead className="h-16 hidden sm:table-cell text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Referencia / Marca</TableHead>
-                  <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">P. Venta</TableHead>
-                  <TableHead className="h-16 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Stock</TableHead>
-                  <TableHead className="h-16 text-right px-8 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones</TableHead>
+                  <TableHead className="h-12 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Producto</TableHead>
+                  <TableHead className="h-12 hidden sm:table-cell text-[10px] font-black text-slate-400 uppercase tracking-widest">Referencia / Marca</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black text-slate-400 uppercase tracking-widest">P. Venta</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stock</TableHead>
+                  <TableHead className="h-12 text-right px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => (
                   <TableRow key={product.id} className="group border-slate-50 hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="px-8 py-8">
+                    <TableCell className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl font-black text-slate-900 group-hover:text-emerald-500 transition-colors">{product.name}</span>
-                        {product.has_variants && <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[10px] px-2 py-0.5 rounded-lg">VARIANTES</Badge>}
+                        <span className="text-lg font-black text-slate-900 group-hover:text-emerald-500 transition-colors">{product.name}</span>
+                        {product.has_variants && <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[9px] px-2 py-0.5 rounded-lg">VARIANTES</Badge>}
                       </div>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell py-8 font-mono text-sm font-black text-slate-400 uppercase">{product.sku || "S/SKU"} • {product.brand || "GENÉRICO"}</TableCell>
-                    <TableCell className="py-8"><span className="text-2xl font-black text-slate-900 tracking-tighter italic">${(product.public_price || 0).toFixed(2)}</span></TableCell>
-                    <TableCell className="py-8">
+                    <TableCell className="hidden sm:table-cell py-4 font-mono text-xs font-black text-slate-400 uppercase">{product.sku || "S/SKU"} • {product.brand || "GENÉRICO"}</TableCell>
+                    <TableCell className="py-4"><span className="text-xl font-black text-slate-900 tracking-tighter italic">${(product.public_price || 0).toFixed(2)}</span></TableCell>
+                    <TableCell className="py-4">
                       <div className={cn(
-                        "inline-flex flex-col items-center justify-center min-w-[72px] h-[72px] rounded-[24px]",
+                        "inline-flex flex-col items-center justify-center min-w-[54px] h-[54px] rounded-xl",
                         (product.has_variants ? product.variants?.some(v => v.stock_quantity <= v.min_stock) : product.stock_quantity <= product.min_stock) ? "bg-rose-50 text-rose-600 shadow-sm" : "bg-emerald-50 text-emerald-600"
                       )}>
-                        <span className="text-2xl font-black">{product.has_variants ? product.variants?.reduce((s, v) => s + v.stock_quantity, 0) : product.stock_quantity}</span>
-                        <span className="text-[9px] font-black uppercase opacity-60">uds</span>
+                        <span className="text-lg font-black">{product.has_variants ? product.variants?.reduce((s, v) => s + v.stock_quantity, 0) : product.stock_quantity}</span>
+                        <span className="text-[8px] font-black uppercase opacity-60">uds</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right px-8 py-8">
-                      <div className="flex justify-end gap-3 text-slate-300">
-                        {product.has_variants && <Button variant="ghost" size="icon" onClick={() => handleManageVariants(product)} className="h-12 w-12 rounded-2xl hover:bg-white hover:text-emerald-500 hover:shadow-sm"><Settings className="h-6 w-6" /></Button>}
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(product)} className="h-12 w-12 rounded-2xl hover:bg-white hover:text-blue-500 hover:shadow-sm"><Edit className="h-6 w-6" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id, product.name)} className="h-12 w-12 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors"><Trash2 className="h-6 w-6" /></Button>
+                    <TableCell className="text-right px-6 py-4">
+                      <div className="flex justify-end gap-2 text-slate-300">
+                        {product.has_variants && <Button variant="ghost" size="icon" onClick={() => handleManageVariants(product)} className="h-10 w-10 rounded-xl hover:bg-white hover:text-emerald-500 hover:shadow-sm"><Settings className="h-5 w-5" /></Button>}
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(product)} className="h-10 w-10 rounded-xl hover:bg-white hover:text-blue-500 hover:shadow-sm"><Edit className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id, product.name)} className="h-10 w-10 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-colors"><Trash2 className="h-5 w-5" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
